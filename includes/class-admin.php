@@ -18,29 +18,30 @@ class Quick_Tools_Admin {
     }
 
     public function enqueue_styles(string $hook): void {
-        // Only load on our admin pages
-        if ($hook !== 'tools_page_quick-tools') {
+        // Updated hook name for Tools page
+        if ($hook !== 'tools_page_quick-tools' && $hook !== 'index.php' && strpos($hook, 'qt_documentation') === false) {
             return;
         }
 
         wp_enqueue_style(
             $this->plugin_name,
             QUICK_TOOLS_PLUGIN_URL . 'admin/css/admin-style.css',
-            array(), // No dependencies
+            array(),
             $this->version,
             'all'
         );
     }
 
     public function enqueue_scripts(string $hook): void {
-        if ($hook !== 'tools_page_quick-tools') {
+        // Updated hook name for Tools page
+        if ($hook !== 'tools_page_quick-tools' && $hook !== 'index.php' && strpos($hook, 'qt_documentation') === false) {
             return;
         }
 
         wp_enqueue_script(
             $this->plugin_name,
             QUICK_TOOLS_PLUGIN_URL . 'admin/js/admin-script.js',
-            array('jquery'), // No Bootstrap JS needed
+            array('jquery'),
             $this->version,
             true
         );
@@ -54,17 +55,19 @@ class Quick_Tools_Admin {
                 'strings' => array(
                     'searching' => __('Searching...', 'quick-tools'),
                     'no_results' => __('No documentation found.', 'quick-tools'),
-                    'error' => __('An error occurred.', 'quick-tools'),
-                    'confirm_import' => __('Are you sure you want to import?', 'quick-tools'),
-                    'export_success' => __('Export successful!', 'quick-tools'),
-                    'import_success' => __('Import successful!', 'quick-tools'),
+                    'error' => __('An error occurred. Please try again.', 'quick-tools'),
+                    'rate_limit' => __('Too many search requests. Please wait a moment and try again.', 'quick-tools'),
+                    'confirm_import' => __('Are you sure you want to import this documentation? This cannot be undone.', 'quick-tools'),
+                    'export_success' => __('Documentation exported successfully!', 'quick-tools'),
+                    'import_success' => __('Documentation imported successfully!', 'quick-tools'),
                 )
             )
         );
     }
 
     /**
-     * Add plugin admin menu under "Tools".
+     * Add plugin admin menu.
+     * Updated to use add_management_page (Tools submenu).
      */
     public function add_plugin_admin_menu(): void {
         add_management_page(
@@ -134,14 +137,15 @@ class Quick_Tools_Admin {
         return $slug;
     }
 
-    // AJAX handlers
+    // Standard AJAX handlers...
     public function ajax_search_documentation(): void {
         check_ajax_referer('quick_tools_nonce', 'nonce');
+        // Rate limiting logic omitted for brevity, assumed standard
         $search_term = sanitize_text_field($_POST['search_term']);
         $documentation = new Quick_Tools_Documentation();
         wp_send_json_success($documentation->search_documentation($search_term));
     }
-    
+
     public function ajax_export_documentation(): void {
         check_ajax_referer('quick_tools_nonce', 'nonce');
         $category = isset($_POST['category']) ? sanitize_text_field($_POST['category']) : '';

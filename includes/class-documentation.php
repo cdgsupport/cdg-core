@@ -175,8 +175,8 @@ class Quick_Tools_Documentation {
             'fields' => 'count'
         ));
 
-        // If there are already categories, don't create defaults
-        if ($existing_categories > 0) {
+        // If there are already categories (and no error), don't create defaults
+        if (!is_wp_error($existing_categories) && $existing_categories > 0) {
             return;
         }
 
@@ -247,6 +247,10 @@ class Quick_Tools_Documentation {
             'hide_empty' => false,
         ));
 
+        if (is_wp_error($categories) || empty($categories)) {
+            return;
+        }
+
         foreach ($categories as $category) {
             wp_add_dashboard_widget(
                 'qt_documentation_' . $category->slug,
@@ -269,7 +273,7 @@ class Quick_Tools_Documentation {
 
         echo '<div class="qt-documentation-widget qt-minimal-widget">';
         
-        if (empty($categories)) {
+        if (is_wp_error($categories) || empty($categories)) {
             echo '<p>' . __('No documentation categories found.', 'quick-tools') . '</p>';
             if (current_user_can('manage_options')) {
                 echo '<p><a href="' . admin_url('post-new.php?post_type=' . self::POST_TYPE) . '" class="button button-primary">' . __('Add Documentation', 'quick-tools') . '</a></p>';
@@ -473,7 +477,7 @@ class Quick_Tools_Documentation {
 
             <div class="qt-category-footer">
                 <a href="<?php echo admin_url('edit.php?post_type=' . self::POST_TYPE); ?>" class="button">
-                    ← <?php _e('All Documentation', 'quick-tools'); ?>
+                    &larr; <?php _e('All Documentation', 'quick-tools'); ?>
                 </a>
                 <a href="<?php echo admin_url(); ?>" class="button">
                     <?php _e('Back to Dashboard', 'quick-tools'); ?>
@@ -528,7 +532,7 @@ class Quick_Tools_Documentation {
 
             <div class="qt-doc-footer">
                 <a href="<?php echo esc_url(admin_url('edit.php?post_type=' . self::POST_TYPE)); ?>" class="button">
-                    ← <?php _e('Back to All Documentation', 'quick-tools'); ?>
+                    &larr; <?php _e('Back to All Documentation', 'quick-tools'); ?>
                 </a>
             </div>
         </div>

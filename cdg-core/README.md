@@ -14,7 +14,7 @@ WordPress optimizations, security hardening, and agency features for Crawford De
 
 - WordPress head cleanup & emoji removal
 - Security hardening (XML-RPC, uploads, headers)
-- **SVG upload support with automatic sanitization** (new in 1.1.0)
+- **SVG upload support** (new in 1.1.0)
 - Performance optimizations (Gutenberg, queries, images)
 - Gravity Forms / Divi compatibility fixes
 - Documentation system for editors
@@ -28,19 +28,11 @@ Visit **Settings → CDG Core** to configure all features.
 
 ### SVG Upload Support (v1.1.0)
 
-CDG Core now includes secure SVG upload support. When enabled:
+CDG Core now includes SVG upload support. When enabled:
 
 - SVG and SVGZ files can be uploaded through the Media Library
-- All uploads are automatically sanitized to remove potentially dangerous content
 - SVG previews display correctly in the Media Library
-
-**Security Features:**
-- Removes all script tags and JavaScript
-- Strips event handler attributes (onclick, onload, onerror, etc.)
-- Removes external entity references (XXE protection)
-- Filters dangerous elements (embed, object, iframe, foreignObject)
-- Validates SVG structure before saving
-- Removes PHP and server-side code injections
+- Dimensions are automatically detected from SVG viewBox/width/height
 
 **Settings:**
 - **Enable SVG Uploads**: Allow SVG file uploads (disabled by default)
@@ -59,10 +51,9 @@ define('WP_POST_REVISIONS', 5);
 ### Changelog
 
 #### 1.1.0
-- Added SVG upload support with automatic sanitization
+- Added SVG upload support
 - Added admin-only restriction option for SVG uploads
 - Added SVG preview support in Media Library
-- Improved security documentation
 
 #### 1.0.0
 - Initial release

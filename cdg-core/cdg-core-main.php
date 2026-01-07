@@ -6,7 +6,7 @@
  * for Crawford Design Group client sites.
  *
  * @package CDG_Core
- * @version 1.2.0
+ * @version 1.2.1
  * @author Crawford Design Group
  * @link https://crawforddesigngroup.com
  */
@@ -19,7 +19,7 @@ if (!defined("ABSPATH")) {
 /**
  * Plugin Constants
  */
-define("CDG_CORE_VERSION", "1.2.0");
+define("CDG_CORE_VERSION", "1.2.1");
 define("CDG_CORE_DIR", plugin_dir_path(__FILE__));
 define("CDG_CORE_URL", plugin_dir_url(__FILE__));
 define("CDG_CORE_BASENAME", plugin_basename(__FILE__));
@@ -107,7 +107,6 @@ final class CDG_Core
         "disable_xmlrpc" => true,
         "block_dangerous_uploads" => true,
         "remove_powered_by" => true,
-        "add_frame_options" => true,
         "disable_code_editor" => true,
         "enable_svg_uploads" => false,
         "svg_admin_only" => true,
@@ -127,7 +126,6 @@ final class CDG_Core
         "heartbeat_admin" => "60",
         "heartbeat_frontend" => "disable",
         "heartbeat_exception_builder" => true,
-        "heartbeat_exception_gf" => true,
 
         // Gutenberg
         "gutenberg_mode" => "optimize",

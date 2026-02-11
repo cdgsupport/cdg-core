@@ -6,7 +6,7 @@
  * for Crawford Design Group client sites.
  *
  * @package CDG_Core
- * @version 1.2.1
+ * @version 1.3.0
  * @author Crawford Design Group
  * @link https://crawforddesigngroup.com
  */
@@ -19,7 +19,7 @@ if (!defined("ABSPATH")) {
 /**
  * Plugin Constants
  */
-define("CDG_CORE_VERSION", "1.2.1");
+define("CDG_CORE_VERSION", "1.3.0");
 define("CDG_CORE_DIR", plugin_dir_path(__FILE__));
 define("CDG_CORE_URL", plugin_dir_url(__FILE__));
 define("CDG_CORE_BASENAME", plugin_basename(__FILE__));
@@ -65,6 +65,13 @@ final class CDG_Core
     private array $settings = [];
 
     /**
+     * Documentation component instance
+     *
+     * @var CDG_Core_Documentation|null
+     */
+    private ?CDG_Core_Documentation $documentation = null;
+
+    /**
      * Default settings
      *
      * @var array
@@ -80,18 +87,6 @@ final class CDG_Core
 
         // Defaults - Divi Projects
         "hide_divi_projects" => false,
-        "enable_project_rename" => false,
-        "project_rename_plural" => "Projects",
-        "project_rename_singular" => "Project",
-        "project_rename_menu" => "Projects",
-        "project_rename_icon" => "dashicons-portfolio",
-
-        // Defaults - Post Rename
-        "enable_post_rename" => false,
-        "post_rename_plural" => "Slides",
-        "post_rename_singular" => "Slide",
-        "post_rename_menu" => "Slides",
-        "post_rename_icon" => "dashicons-slides",
 
         // WordPress Cleanup
         "remove_wp_version" => true,
@@ -199,6 +194,11 @@ final class CDG_Core
     private function load_settings(): void
     {
         $saved = get_option("cdg_core_settings", []);
+
+        if (!is_array($saved)) {
+            $saved = [];
+        }
+
         $this->settings = wp_parse_args($saved, $this->defaults);
     }
 
@@ -221,18 +221,19 @@ final class CDG_Core
     /**
      * Run activation tasks
      *
-     * This runs on 'init' hook to ensure WordPress rewrite rules are available.
+     * Reuses the stored Documentation component instance rather than
+     * creating a duplicate. Runs on 'init' hook to ensure WordPress
+     * rewrite rules are available.
      *
      * @return void
      */
     public function run_activation(): void
     {
-        // Create documentation CPT and taxonomy
-        if (class_exists("CDG_Core_Documentation")) {
-            $doc = new CDG_Core_Documentation($this);
-            $doc->register_post_type();
-            $doc->register_taxonomy();
-            $doc->create_default_categories();
+        // Reuse existing Documentation instance if available
+        if ($this->documentation) {
+            $this->documentation->register_post_type();
+            $this->documentation->register_taxonomy();
+            $this->documentation->create_default_categories();
         }
 
         // Flush rewrite rules - must happen after post types are registered
@@ -251,12 +252,12 @@ final class CDG_Core
         new CDG_Core_Security($this);
         new CDG_Core_Performance($this);
 
-        // Defaults (Comments, Projects, Posts)
+        // Defaults (Comments, Projects)
         new CDG_Core_Defaults($this);
 
         // Features
         if ($this->get_setting("enable_documentation")) {
-            new CDG_Core_Documentation($this);
+            $this->documentation = new CDG_Core_Documentation($this);
         }
 
         if ($this->get_setting("enable_cpt_widgets")) {
@@ -366,8 +367,8 @@ final class CDG_Core
     {
         return sprintf(
             "CDG Core %s | WordPress %s",
-            CDG_CORE_VERSION,
-            get_bloginfo("version"),
+            esc_html(CDG_CORE_VERSION),
+            esc_html(get_bloginfo("version")),
         );
     }
 

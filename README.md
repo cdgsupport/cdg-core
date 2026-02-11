@@ -2,7 +2,7 @@
 
 WordPress optimizations, security hardening, and agency features for Crawford Design Group client sites.
 
-## Version 1.2.1
+## Version 1.3.0
 
 ### Installation
 
@@ -19,10 +19,8 @@ WordPress optimizations, security hardening, and agency features for Crawford De
 - Gravity Forms / Divi compatibility fixes
 - Documentation system for editors
 - CPT Dashboard widgets
-- **Disable Comments** (v1.2.0)
-- **Hide Divi Projects** (v1.2.0)
-- **Rename Divi Projects** (v1.2.0)
-- Post type renaming
+- **Disable Comments**
+- **Hide Divi Projects**
 - Admin branding & custom CSS
 
 ### Settings Tabs
@@ -30,7 +28,7 @@ WordPress optimizations, security hardening, and agency features for Crawford De
 | Tab | Description |
 |-----|-------------|
 | **Features** | Documentation system, CPT widgets |
-| **Defaults** | Comments, Divi Projects, Post renaming |
+| **Defaults** | Comments, Divi Projects |
 | **WordPress Cleanup** | Head cleanup, dashboard widgets, heartbeat |
 | **Security** | XML-RPC, uploads, X-Powered-By, SVG support |
 | **Performance** | Gutenberg, queries, images, revisions |
@@ -64,7 +62,7 @@ Completely disables WordPress comments:
 - Hides Discussion settings page
 - Blocks access to comment admin pages
 - Disables comment REST API endpoints
-- Disables comment feeds
+- Disables comment feeds (301 redirect to home)
 - Removes pingback headers
 
 #### Hide Divi Projects
@@ -73,20 +71,6 @@ Fully disables Divi's built-in Projects post type:
 - Removes Project Categories taxonomy
 - Removes Project Tags taxonomy
 - Redirects any direct access to project admin pages
-
-#### Rename Divi Projects
-Customize the Projects post type labels (only when not hidden):
-- Plural name (e.g., "Portfolio")
-- Singular name (e.g., "Portfolio Item")
-- Menu name
-- Menu icon (dashicon)
-
-#### Rename Posts
-Customize the default Posts post type labels:
-- Plural name (e.g., "Slides")
-- Singular name (e.g., "Slide")
-- Menu name
-- Menu icon (dashicon)
 
 ### SVG Upload Support
 
@@ -127,6 +111,22 @@ define('WP_POST_REVISIONS', 5);
 Note: The CDG Core setting overrides the wp-config.php constant.
 
 ### Changelog
+
+#### 1.3.0
+- Removed post type renaming feature (Posts rename)
+- Removed Divi Projects renaming feature
+- Fixed duplicate DNS prefetch removal between Cleanup and Performance classes
+- Extracted duplicate `gf_global` data construction into shared private method
+- Fixed Documentation component creating duplicate instances during activation
+- Fixed redundant type check in `add_lazy_loading()` method
+- Fixed leading space in inline style concatenation for aspect-ratio
+- Fixed version constant mismatch between loader and main plugin file
+- Changed comment feed disable from 403 to 301 redirect for better SEO
+- Added plugin activation/deactivation cache invalidation for dashboard widgets
+- Added `is_array()` safety check on `get_option()` return in `load_settings()`
+- Added proper `esc_html()` escaping to version constant in admin footer
+- Cleaned up admin JavaScript (removed rename-related toggle handlers)
+- Code cleanup and PHPDoc improvements
 
 #### 1.2.1
 - Removed X-Frame-Options header (handled by SpinupWP at Nginx level)

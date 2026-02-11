@@ -48,5 +48,17 @@
         }
       })
       .trigger("change");
+
+    // Toggle Font admin-only option visibility
+    $('input[name="enable_font_uploads"]')
+      .on("change", function () {
+        var adminOnlyRow = $('input[name="font_admin_only"]').closest("tr");
+        if (this.checked) {
+          adminOnlyRow.show();
+        } else {
+          adminOnlyRow.hide();
+        }
+      })
+      .trigger("change");
   });
 })(jQuery);

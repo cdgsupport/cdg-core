@@ -50,6 +50,7 @@ spl_autoload_register(function (string $class): void {
  */
 final class CDG_Core
 {
+<<<<<<< HEAD
   /**
    * Plugin instance
    *
@@ -175,6 +176,147 @@ final class CDG_Core
   {
     if (null === self::$instance) {
       self::$instance = new self();
+=======
+    /**
+     * Plugin instance
+     *
+     * @var CDG_Core|null
+     */
+    private static ?CDG_Core $instance = null;
+
+    /**
+     * Plugin settings
+     *
+     * @var array
+     */
+    private array $settings = [];
+
+    /**
+     * Documentation component instance
+     *
+     * @var CDG_Core_Documentation|null
+     */
+    private ?CDG_Core_Documentation $documentation = null;
+
+    /**
+     * Default settings
+     *
+     * @var array
+     */
+    private array $defaults = [
+        // Features
+        "enable_documentation" => true,
+        "enable_cpt_widgets" => true,
+        "enable_admin_branding" => true,
+
+        // Defaults - Comments
+        "disable_comments" => false,
+
+        // Defaults - Divi Projects
+        "hide_divi_projects" => false,
+
+        // WordPress Cleanup
+        "remove_wp_version" => true,
+        "remove_wlw_manifest" => true,
+        "remove_rsd_link" => true,
+        "remove_shortlink" => true,
+        "remove_adjacent_posts" => true,
+        "remove_oembed_links" => true,
+        "remove_rest_api_link" => true,
+        "disable_emojis" => true,
+
+        // Security
+        "disable_xmlrpc" => true,
+        "block_dangerous_uploads" => true,
+        "remove_powered_by" => true,
+        "disable_code_editor" => true,
+        "enable_svg_uploads" => false,
+        "svg_admin_only" => true,
+        "enable_font_uploads" => false,
+        "font_admin_only" => true,
+        "enable_lottie_uploads" => false,
+        "lottie_admin_only" => true,
+
+        // Dashboard Widgets
+        "remove_quick_draft" => true,
+        "remove_wp_news" => true,
+        "remove_php_nag" => true,
+        "remove_browser_nag" => true,
+        "remove_site_health" => false,
+        "remove_welcome_panel" => false,
+        "remove_activity" => false,
+        "remove_at_a_glance" => false,
+        "hidden_dashboard_widgets" => [],
+
+        // Heartbeat
+        "heartbeat_admin" => "60",
+        "heartbeat_frontend" => "disable",
+        "heartbeat_exception_builder" => true,
+
+        // Gutenberg
+        "gutenberg_mode" => "optimize",
+
+        // Performance
+        "optimize_search" => true,
+        "optimize_archives" => true,
+        "enable_lazy_loading" => true,
+        "remove_medium_large" => true,
+        "remove_dns_prefetch" => true,
+
+        // Image Sizes
+        "disabled_image_sizes" => [],
+
+        // Post Revisions
+        "post_revisions_mode" => "limited",
+        "post_revisions_limit" => 5,
+
+        // Gravity Forms
+        "enable_gf_fixes" => true,
+        "gf_detection_mode" => "auto",
+        "gf_manual_pages" => [],
+
+        // Admin
+        "admin_footer_text" =>
+            'Website by <a href="https://crawforddesigngroup.com" target="_blank">Crawford Design Group</a>',
+        "custom_admin_css" => '#wpfooter a { color: #F34F27; }
+#adminmenu .wp-submenu-head, #adminmenu a.menu-top { font-size: 12px; font-weight: 500; }
+#adminmenu .wp-submenu a { font-size: 11px; }
+#wpbody-content, #wpcontent { background-color: #f7f7f8; }
+.postbox, .stuffbox { border-radius: 8px; overflow: hidden; }
+input[type=text], input[type=email], input[type=url], input[type=password], input[type=search], input[type=number], input[type=checkbox], input[type=date], input[type=datetime], input[type=month], textarea, select { border-radius: 6px; box-shadow: none; border-color: #e0e0e0; }
+.button, .button-primary, .button-secondary { border-radius: 6px; }
+.postbox, #poststuff #post-body .postbox { border-color: #e0e0e0; }
+.postbox { margin-bottom: 16px; border: 1px solid #eaeaea; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04); }
+.postbox .inside { padding: 12px 16px; }
+.button, .button-primary, .button-secondary, input, textarea, select { transition: all 0.15s ease; }
+#title { font-size: 1.4em; padding: 8px 12px; border-color: #e0e0e0; border-radius: 6px; }
+#title:focus { border-color: #3858e9; box-shadow: 0 0 0 1px #3858e9; }',
+
+        // Documentation
+        "show_documentation_widgets" => true,
+        "documentation_module_style" => "informative",
+        "documentation_widget_limit" => 5,
+
+        // CPT Dashboard
+        "show_cpt_widgets" => true,
+        "cpt_module_style" => "informative",
+        "selected_cpts" => [],
+        "show_recent_posts" => true,
+        "recent_posts_limit" => 3,
+    ];
+
+    /**
+     * Get plugin instance
+     *
+     * @return CDG_Core
+     */
+    public static function get_instance(): CDG_Core
+    {
+        if (null === self::$instance) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+>>>>>>> main
     }
     return self::$instance;
   }
@@ -203,6 +345,7 @@ final class CDG_Core
       $saved = [];
     }
 
+<<<<<<< HEAD
     $this->settings = wp_parse_args($saved, $this->defaults);
   }
 
@@ -219,6 +362,22 @@ final class CDG_Core
       // Schedule activation tasks for 'init' hook when WordPress is fully loaded
       add_action("init", [$this, "run_activation"], 0);
       update_option("cdg_core_version", CDG_CORE_VERSION);
+=======
+    /**
+     * Load settings from database
+     *
+     * @return void
+     */
+    private function load_settings(): void
+    {
+        $saved = get_option("cdg_core_settings", []);
+
+        if (!is_array($saved)) {
+            $saved = [];
+        }
+
+        $this->settings = wp_parse_args($saved, $this->defaults);
+>>>>>>> main
     }
   }
 
@@ -240,6 +399,7 @@ final class CDG_Core
       $this->documentation->create_default_categories();
     }
 
+<<<<<<< HEAD
     // Flush rewrite rules - must happen after post types are registered
     flush_rewrite_rules();
   }
@@ -266,6 +426,71 @@ final class CDG_Core
 
     if ($this->get_setting("enable_cpt_widgets")) {
       new CDG_Core_CPT_Dashboard($this);
+=======
+    /**
+     * Run activation tasks
+     *
+     * Reuses the stored Documentation component instance rather than
+     * creating a duplicate. Runs on 'init' hook to ensure WordPress
+     * rewrite rules are available.
+     *
+     * @return void
+     */
+    public function run_activation(): void
+    {
+        // Reuse existing Documentation instance if available
+        if ($this->documentation) {
+            $this->documentation->register_post_type();
+            $this->documentation->register_taxonomy();
+            $this->documentation->create_default_categories();
+        }
+
+        // Flush rewrite rules - must happen after post types are registered
+        flush_rewrite_rules();
+    }
+
+    /**
+     * Initialize components
+     *
+     * @return void
+     */
+    private function init_components(): void
+    {
+        // Core WordPress optimizations
+        new CDG_Core_Cleanup($this);
+        new CDG_Core_Security($this);
+        new CDG_Core_Performance($this);
+
+        // Defaults (Comments, Projects)
+        new CDG_Core_Defaults($this);
+
+        // Features
+        if ($this->get_setting("enable_documentation")) {
+            $this->documentation = new CDG_Core_Documentation($this);
+        }
+
+        if ($this->get_setting("enable_cpt_widgets")) {
+            new CDG_Core_CPT_Dashboard($this);
+        }
+
+        if ($this->get_setting("enable_gf_fixes")) {
+            new CDG_Core_Gravity_Forms($this);
+        }
+
+        // SVG Support - initialize regardless of setting (class checks internally)
+        new CDG_Core_SVG_Support($this);
+
+        // Font Support - initialize regardless of setting (class checks internally)
+        new CDG_Core_Font_Support($this);
+
+        // Lottie Support - initialize regardless of setting (class checks internally)
+        new CDG_Core_Lottie_Support($this);
+
+        // Admin
+        if (is_admin()) {
+            new CDG_Core_Admin($this);
+        }
+>>>>>>> main
     }
 
     if ($this->get_setting("enable_gf_fixes")) {
@@ -319,8 +544,23 @@ final class CDG_Core
       return $this->settings[$key];
     }
 
+<<<<<<< HEAD
     if (array_key_exists($key, $this->defaults)) {
       return $this->defaults[$key];
+=======
+    /**
+     * Admin footer version
+     *
+     * @return string
+     */
+    public function admin_footer_version(): string
+    {
+        return sprintf(
+            "CDG Core %s | WordPress %s",
+            esc_html(CDG_CORE_VERSION),
+            esc_html(get_bloginfo("version")),
+        );
+>>>>>>> main
     }
 
     return $default;

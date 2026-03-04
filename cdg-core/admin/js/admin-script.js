@@ -60,5 +60,17 @@
         }
       })
       .trigger("change");
+
+    // Toggle Lottie admin-only option visibility
+    $('input[name="enable_lottie_uploads"]')
+      .on("change", function () {
+        var adminOnlyRow = $('input[name="lottie_admin_only"]').closest("tr");
+        if (this.checked) {
+          adminOnlyRow.show();
+        } else {
+          adminOnlyRow.hide();
+        }
+      })
+      .trigger("change");
   });
 })(jQuery);

@@ -208,6 +208,8 @@ class CDG_Core_Admin
         $s["svg_admin_only"] = !empty($input["svg_admin_only"]);
         $s["enable_font_uploads"] = !empty($input["enable_font_uploads"]);
         $s["font_admin_only"] = !empty($input["font_admin_only"]);
+        $s["enable_lottie_uploads"] = !empty($input["enable_lottie_uploads"]);
+        $s["lottie_admin_only"] = !empty($input["lottie_admin_only"]);
         break;
 
       case "performance":
@@ -848,6 +850,53 @@ class CDG_Core_Admin
                     </label>
                     <p class="description"><?php esc_html_e(
                       "When enabled, only users with the manage_options capability (administrators) can upload font files.",
+                      "cdg-core"
+                    ); ?></p>
+                </td>
+            </tr>
+        </table>
+
+        <h2><?php esc_html_e("Lottie Upload Support", "cdg-core"); ?></h2>
+        <p class="description"><?php esc_html_e(
+          "Allow Lottie animation (.json, .lottie) file uploads for use with Divi or animation libraries.",
+          "cdg-core"
+        ); ?></p>
+        <table class="form-table">
+            <tr>
+                <th><?php esc_html_e(
+                  "Enable Lottie Uploads",
+                  "cdg-core"
+                ); ?></th>
+                <td>
+                    <label>
+                        <input type="checkbox" name="enable_lottie_uploads" value="1" <?php checked(
+                          $s["enable_lottie_uploads"]
+                        ); ?>>
+                        <?php esc_html_e(
+                          "Allow Lottie/JSON file uploads",
+                          "cdg-core"
+                        ); ?>
+                    </label>
+                    <p class="description"><?php esc_html_e(
+                      "When enabled, .json and .lottie files can be uploaded through the Media Library.",
+                      "cdg-core"
+                    ); ?></p>
+                </td>
+            </tr>
+            <tr>
+                <th><?php esc_html_e("Restrict to Admins", "cdg-core"); ?></th>
+                <td>
+                    <label>
+                        <input type="checkbox" name="lottie_admin_only" value="1" <?php checked(
+                          $s["lottie_admin_only"]
+                        ); ?>>
+                        <?php esc_html_e(
+                          "Only allow administrators to upload Lottie files",
+                          "cdg-core"
+                        ); ?>
+                    </label>
+                    <p class="description"><?php esc_html_e(
+                      "When enabled, only users with the manage_options capability (administrators) can upload Lottie/JSON files.",
                       "cdg-core"
                     ); ?></p>
                 </td>

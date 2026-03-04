@@ -107,6 +107,8 @@ final class CDG_Core
     "svg_admin_only" => true,
     "enable_font_uploads" => false,
     "font_admin_only" => true,
+    "enable_lottie_uploads" => false,
+    "lottie_admin_only" => true,
 
     // Dashboard Widgets
     "remove_quick_draft" => true,
@@ -275,6 +277,9 @@ final class CDG_Core
 
     // Font Support - initialize regardless of setting (class checks internally)
     new CDG_Core_Font_Support($this);
+
+    // Lottie Support - initialize regardless of setting (class checks internally)
+    new CDG_Core_Lottie_Support($this);
 
     // Admin
     if (is_admin()) {

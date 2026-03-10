@@ -6,7 +6,7 @@
  * for Crawford Design Group client sites.
  *
  * @package CDG_Core
- * @version 1.3.1
+ * @version 1.3.3
  * @author Crawford Design Group
  * @link https://crawforddesigngroup.com
  */
@@ -19,7 +19,7 @@ if (!defined("ABSPATH")) {
 /**
  * Plugin Constants
  */
-define("CDG_CORE_VERSION", "1.3.1");
+define("CDG_CORE_VERSION", "1.3.3");
 define("CDG_CORE_DIR", plugin_dir_path(__FILE__));
 define("CDG_CORE_URL", plugin_dir_url(__FILE__));
 define("CDG_CORE_BASENAME", plugin_basename(__FILE__));
@@ -164,6 +164,10 @@ input[type=text], input[type=email], input[type=url], input[type=password], inpu
 .button, .button-primary, .button-secondary, input, textarea, select { transition: all 0.15s ease; }
 #title { font-size: 1.4em; padding: 8px 12px; border-color: #e0e0e0; border-radius: 6px; }
 #title:focus { border-color: #3858e9; box-shadow: 0 0 0 1px #3858e9; }',
+
+    // Theme Color
+    "theme_color_mode" => "auto",
+    "theme_color_hex" => "#ffffff",
 
     // Documentation
     "show_documentation_widgets" => true,
@@ -316,6 +320,12 @@ input[type=text], input[type=email], input[type=url], input[type=password], inpu
     if (!empty($this->get_setting("custom_admin_css"))) {
       add_action("admin_head", [$this, "output_custom_admin_css"]);
     }
+
+    // Theme color meta tag
+    $theme_color_mode = $this->get_setting("theme_color_mode");
+    if ($theme_color_mode !== "disabled") {
+      add_action("wp_head", [$this, "output_theme_color_meta"], 1);
+    }
   }
 
   /**
@@ -407,6 +417,47 @@ input[type=text], input[type=email], input[type=url], input[type=password], inpu
         '<style id="cdg-core-admin-css">%s</style>',
         wp_strip_all_tags($css)
       );
+    }
+  }
+
+  /**
+   * Output theme-color meta tag
+   *
+   * Outputs a <meta name="theme-color"> tag for browser UI tinting.
+   * In 'auto' mode, pulls from Divi's accent color first, then falls
+   * back to the WordPress Customizer background color. In 'custom'
+   * mode, uses the user-specified hex value.
+   *
+   * @return void
+   */
+  public function output_theme_color_meta(): void
+  {
+    $mode = $this->get_setting("theme_color_mode");
+    $color = "";
+
+    if ($mode === "auto") {
+      // Try Divi accent color first
+      if (function_exists("et_get_option")) {
+        $color = et_get_option("accent_color", "");
+      }
+
+      // Fallback to Customizer background color
+      if (empty($color)) {
+        $bg = get_background_color();
+        if (!empty($bg)) {
+          $color = "#" . ltrim($bg, "#");
+        }
+      }
+    } elseif ($mode === "custom") {
+      $color = $this->get_setting("theme_color_hex");
+    }
+
+    // Validate hex format and output
+    if (
+      !empty($color) &&
+      preg_match('/^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$/', $color)
+    ) {
+      printf('<meta name="theme-color" content="%s">' . "\n", esc_attr($color));
     }
   }
 }

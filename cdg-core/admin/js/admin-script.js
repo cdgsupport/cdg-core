@@ -72,5 +72,24 @@
         }
       })
       .trigger("change");
+
+    // Toggle theme color custom field visibility
+    $('input[name="theme_color_mode"]')
+      .on("change", function () {
+        var customRow = $('input[name="theme_color_hex"]').closest("tr");
+        customRow.toggle(
+          $('input[name="theme_color_mode"]:checked').val() === "custom"
+        );
+      })
+      .filter(":checked")
+      .trigger("change");
+
+    // Live preview of theme color swatch
+    $('input[name="theme_color_hex"]').on("input", function () {
+      var val = $(this).val();
+      if (/^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$/.test(val)) {
+        $(this).siblings(".cdg-color-preview").css("background-color", val);
+      }
+    });
   });
 })(jQuery);

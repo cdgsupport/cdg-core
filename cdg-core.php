@@ -3,7 +3,7 @@
  * Plugin Name: CDG Core
  * Plugin URI: https://crawforddesigngroup.com
  * Description: WordPress optimizations, security hardening, and agency features for Crawford Design Group client sites.
- * Version: 1.7.0
+ * Version: 1.9.0
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author: Crawford Design Group
@@ -21,7 +21,7 @@ if (!defined("ABSPATH")) {
 /**
  * Plugin Constants
  */
-define("CDG_CORE_VERSION", "1.7.0");
+define("CDG_CORE_VERSION", "1.9.0");
 define("CDG_CORE_DIR", plugin_dir_path(__FILE__));
 define("CDG_CORE_URL", plugin_dir_url(__FILE__));
 define("CDG_CORE_BASENAME", plugin_basename(__FILE__));
@@ -52,6 +52,29 @@ spl_autoload_register(function (string $class): void {
  */
 final class CDG_Core
 {
+  /**
+   * The CSS that used to pre-fill the "Custom Admin CSS" textarea by
+   * default (pre-1.9.0). Kept only so the one-time migration below can
+   * detect "never customized, just inherited the default" and clear it
+   * safely — any site that edited this field, even slightly, keeps its
+   * own text untouched.
+   *
+   * @var string
+   */
+  private const LEGACY_CUSTOM_ADMIN_CSS = '#wpfooter a { color: #F34F27; }
+#adminmenu .wp-submenu-head, #adminmenu a.menu-top { font-size: 12px; font-weight: 500; }
+#adminmenu .wp-submenu a { font-size: 11px; }
+#wpbody-content, #wpcontent { background-color: #f7f7f8; }
+.postbox, .stuffbox { border-radius: 8px; overflow: hidden; }
+input[type=text], input[type=email], input[type=url], input[type=password], input[type=search], input[type=number], input[type=checkbox], input[type=date], input[type=datetime], input[type=month], textarea, select { border-radius: 6px; box-shadow: none; border-color: #e0e0e0; }
+.button, .button-primary, .button-secondary { border-radius: 6px; }
+.postbox, #poststuff #post-body .postbox { border-color: #e0e0e0; }
+.postbox { margin-bottom: 16px; border: 1px solid #eaeaea; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04); }
+.postbox .inside { padding: 12px 16px; }
+.button, .button-primary, .button-secondary, input, textarea, select { transition: all 0.15s ease; }
+#title { font-size: 1.4em; padding: 8px 12px; border-color: #e0e0e0; border-radius: 6px; }
+#title:focus { border-color: #3858e9; box-shadow: 0 0 0 1px #3858e9; }';
+
   /**
    * Plugin instance
    *
@@ -146,14 +169,17 @@ final class CDG_Core
     // Code Snippets
     "code_snippets" => [],
 
-    // Sidebar management
-    "sidebar_entry_names"  => [],   // menu_slug => display_name (global rename)
-    "sidebar_entry_hidden" => [],   // menu_slug => [uid, ...]
-    "custom_menu_links"    => [],   // [{id, title, icon, link, target, hidden_for:[uid,...]}]
-    "sidebar_menu_order"   => [],   // uid => JSON-encoded [slug, ...]
+    // Roles
+    "enable_custom_roles" => false, // creates Agency / Manager / Staff roles
+    "hide_native_roles"   => false, // hides default WP roles from the role picker (requires enable_custom_roles)
 
-    // Admin Bar
-    "admin_bar_logo_id" => 0,
+    // Sidebar management
+    "sidebar_entry_names"    => [],   // menu_slug => display_name (global rename)
+    "sidebar_entry_hidden"   => [],   // menu_slug => [role_slug, ...] (cdg_client_manager / cdg_client_staff)
+    "sidebar_submenu_names"  => [],   // parent_slug => [submenu_slug => display_name]
+    "sidebar_submenu_hidden" => [],   // parent_slug => [submenu_slug => [role_slug, ...]]
+    "custom_menu_links"      => [],   // [{id, title, icon, link, target, hidden_for:[role_slug,...]}]
+    "sidebar_menu_order"     => [],   // role_slug => [slug, ...] (top-level items only)
 
     // Login Page
     "login_logo_id" => 0,
@@ -166,19 +192,7 @@ final class CDG_Core
     // Admin
     "admin_footer_text" =>
       'Website by <a href="https://crawforddesigngroup.com" target="_blank">Crawford Design Group</a>',
-    "custom_admin_css" => '#wpfooter a { color: #F34F27; }
-#adminmenu .wp-submenu-head, #adminmenu a.menu-top { font-size: 12px; font-weight: 500; }
-#adminmenu .wp-submenu a { font-size: 11px; }
-#wpbody-content, #wpcontent { background-color: #f7f7f8; }
-.postbox, .stuffbox { border-radius: 8px; overflow: hidden; }
-input[type=text], input[type=email], input[type=url], input[type=password], input[type=search], input[type=number], input[type=checkbox], input[type=date], input[type=datetime], input[type=month], textarea, select { border-radius: 6px; box-shadow: none; border-color: #e0e0e0; }
-.button, .button-primary, .button-secondary { border-radius: 6px; }
-.postbox, #poststuff #post-body .postbox { border-color: #e0e0e0; }
-.postbox { margin-bottom: 16px; border: 1px solid #eaeaea; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04); }
-.postbox .inside { padding: 12px 16px; }
-.button, .button-primary, .button-secondary, input, textarea, select { transition: all 0.15s ease; }
-#title { font-size: 1.4em; padding: 8px 12px; border-color: #e0e0e0; border-radius: 6px; }
-#title:focus { border-color: #3858e9; box-shadow: 0 0 0 1px #3858e9; }',
+    "custom_admin_css" => "",
 
     // Theme Color
     "theme_color_mode" => "auto",
@@ -279,8 +293,82 @@ input[type=text], input[type=email], input[type=url], input[type=password], inpu
       $this->documentation->create_default_categories();
     }
 
+    // Role creation is opt-in (Roles tab) and handled by CDG_Core_Roles
+    // itself on 'init' — nothing to force here on activation.
+
+    // One-time migration: sidebar hide/order settings used to be keyed by
+    // user ID; they're now keyed by role slug. Old per-user data can't be
+    // reinterpreted as roles, so it's cleared once and never touched again.
+    $this->migrate_sidebar_settings_to_roles();
+
+    // One-time migration: clear the pre-1.9.0 default "Custom Admin CSS"
+    // text on sites that never actually customized it.
+    $this->migrate_clear_default_custom_css();
+
     // Flush rewrite rules - must happen after post types are registered
     flush_rewrite_rules();
+  }
+
+  /**
+   * One-time clear of the legacy "Custom Admin CSS" default text. Only
+   * touches sites where the saved value is an exact match for the old
+   * default (i.e. the field was never actually edited) — anything else,
+   * including a value that's merely similar, is left alone. Gated by its
+   * own flag so it only ever runs once, regardless of future version bumps.
+   *
+   * @return void
+   */
+  private function migrate_clear_default_custom_css(): void
+  {
+    if (get_option("cdg_core_custom_css_migrated", false)) {
+      return;
+    }
+
+    $settings = get_option("cdg_core_settings", []);
+
+    if (
+      is_array($settings) &&
+      isset($settings["custom_admin_css"]) &&
+      $settings["custom_admin_css"] === self::LEGACY_CUSTOM_ADMIN_CSS
+    ) {
+      $settings["custom_admin_css"] = "";
+      update_option("cdg_core_settings", $settings);
+    }
+
+    update_option("cdg_core_custom_css_migrated", true);
+  }
+
+  /**
+   * One-time clear of the legacy per-user-ID sidebar settings so the new
+   * per-role format starts clean. Gated by its own flag (not the plugin
+   * version) so it only ever runs once, regardless of future version bumps.
+   *
+   * @return void
+   */
+  private function migrate_sidebar_settings_to_roles(): void
+  {
+    if (get_option("cdg_core_sidebar_roles_migrated", false)) {
+      return;
+    }
+
+    $settings = get_option("cdg_core_settings", []);
+
+    if (is_array($settings)) {
+      unset($settings["sidebar_entry_hidden"], $settings["sidebar_menu_order"]);
+
+      if (isset($settings["custom_menu_links"]) && is_array($settings["custom_menu_links"])) {
+        foreach ($settings["custom_menu_links"] as &$link) {
+          if (is_array($link)) {
+            $link["hidden_for"] = [];
+          }
+        }
+        unset($link);
+      }
+
+      update_option("cdg_core_settings", $settings);
+    }
+
+    update_option("cdg_core_sidebar_roles_migrated", true);
   }
 
   /**
@@ -297,6 +385,10 @@ input[type=text], input[type=email], input[type=url], input[type=password], inpu
 
     // Defaults (Comments, Projects)
     new CDG_Core_Defaults($this);
+
+    // Roles — Agency / Manager / Staff. Instantiated unconditionally, but
+    // it's a no-op unless "Enable Custom Roles" is turned on in the Roles tab.
+    new CDG_Core_Roles($this);
 
     // Features
     if ($this->get_setting("enable_documentation")) {
@@ -348,6 +440,7 @@ input[type=text], input[type=email], input[type=url], input[type=password], inpu
     if ($this->get_setting("enable_admin_branding")) {
       add_filter("admin_footer_text", [$this, "admin_footer_text"]);
       add_filter("update_footer", [$this, "admin_footer_version"], 11);
+      add_action("admin_head", [$this, "output_admin_footer_css"]);
     }
 
     // Custom admin CSS
@@ -355,11 +448,10 @@ input[type=text], input[type=email], input[type=url], input[type=password], inpu
       add_action("admin_head", [$this, "output_custom_admin_css"]);
     }
 
-    // Admin bar logo CSS override.
-    if ($this->get_setting("admin_bar_logo_id")) {
-      add_action("admin_head", [$this, "output_admin_bar_logo_css"]);
-      add_action("wp_head",    [$this, "output_admin_bar_logo_css"]);
-    }
+    // Admin bar logo CSS override — always on, replaces the WP logo with
+    // the bundled CDG icon.
+    add_action("admin_head", [$this, "output_admin_bar_logo_css"]);
+    add_action("wp_head",    [$this, "output_admin_bar_logo_css"]);
 
     // Theme color meta tag
     $theme_color_mode = $this->get_setting("theme_color_mode");
@@ -448,6 +540,20 @@ input[type=text], input[type=email], input[type=url], input[type=password], inpu
   }
 
   /**
+   * Output the fixed CSS that colors links in the admin footer (including
+   * the branded "Website by Crawford Design Group" link) to match CDG's
+   * brand color. This is a permanent part of the plugin, not something
+   * that lives in the editable "Custom Admin CSS" field, so clearing that
+   * field never removes it.
+   *
+   * @return void
+   */
+  public function output_admin_footer_css(): void
+  {
+    echo '<style id="cdg-core-footer-css">#wpfooter a{color:#F34F27}</style>' . "\n";
+  }
+
+  /**
    * Output custom admin CSS
    *
    * @return void
@@ -467,21 +573,13 @@ input[type=text], input[type=email], input[type=url], input[type=password], inpu
    * Output admin bar logo CSS override.
    *
    * Hides the default WordPress "W" dashicon and replaces it with the
-   * selected attachment image via background-image on the same element.
+   * bundled CDG icon via background-image on the same element.
    *
    * @return void
    */
   public function output_admin_bar_logo_css(): void
   {
-    $logo_id = absint($this->get_setting("admin_bar_logo_id"));
-    if (!$logo_id) {
-      return;
-    }
-
-    $url = wp_get_attachment_image_url($logo_id, "thumbnail");
-    if (!$url) {
-      return;
-    }
+    $url = CDG_CORE_URL . "admin/images/admin-bar-icon.svg";
 
     printf(
       '<style id="cdg-adminbar-logo-css">' .

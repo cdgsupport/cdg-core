@@ -846,37 +846,20 @@ textarea.cdg-input {
   display: none;
 }
 
-/* ── User multi-select (shared) ── */
-.cdg-select-multi {
-  width: 100%;
-  font-size: 12px;
-  border: 1px solid var(--cdg-border);
-  border-radius: 6px;
-  background: var(--cdg-bg);
-  color: var(--cdg-fg);
-  padding: 2px 0;
-  cursor: pointer;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.cdg-select-multi:focus {
-  outline: none;
-  border-color: var(--cdg-accent, #3858e9);
-  box-shadow: 0 0 0 1px var(--cdg-accent, #3858e9);
-}
-
-.cdg-select-multi option {
-  padding: 4px 8px;
-  font-size: 12px;
-}
-
-/* ── Sidebar Menu Items accordion ── */
+/* ── Sidebar Menu Items grid ── */
 .cdg-si-list {
   display: flex;
   flex-direction: column;
 }
 
+/* Track count assumes exactly 2 target roles (Manager, Staff) — see
+   CDG_Core_Roles::target_roles(). Update this if that ever changes. */
 .cdg-si-row {
+  display: grid;
+  grid-template-columns: 1fr 240px 120px 120px;
+  align-items: center;
+  gap: 16px;
+  padding: 9px 20px;
   border-bottom: 1px solid var(--cdg-border);
 }
 
@@ -884,27 +867,27 @@ textarea.cdg-input {
   border-bottom: none;
 }
 
-.cdg-si-header {
+.cdg-si-row-head {
+  padding: 8px 20px;
+  background: var(--cdg-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--cdg-muted-fg);
+}
+
+.cdg-si-main {
   display: flex;
   align-items: center;
   gap: 10px;
-  width: 100%;
-  padding: 10px 20px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  text-align: left;
+  min-width: 0;
   color: var(--cdg-fg);
   font-size: 13px;
   font-weight: 500;
-  transition: background 0.12s ease;
 }
 
-.cdg-si-header:hover {
-  background: var(--cdg-muted);
-}
-
-.cdg-si-header .dashicons {
+.cdg-si-main .dashicons {
   font-size: 18px;
   width: 20px;
   height: 20px;
@@ -913,28 +896,68 @@ textarea.cdg-input {
 }
 
 .cdg-si-title {
-  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.cdg-si-chevron {
+.cdg-si-role-col {
+  display: flex;
+  justify-content: center;
+}
+
+/* Checkbox-only variant of .cdg-check-item — no visible label text. */
+.cdg-check-solo {
+  gap: 0;
+}
+
+/* ── Submenu expand/collapse ── */
+.cdg-si-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
   color: var(--cdg-muted-fg);
-  transition: transform 0.18s ease;
 }
 
-.cdg-si-row.cdg-si-open .cdg-si-chevron {
-  transform: rotate(180deg);
+.cdg-si-toggle svg {
+  transition: transform 0.15s ease;
 }
 
-.cdg-si-body {
+.cdg-si-row.cdg-si-parent-open .cdg-si-toggle svg {
+  transform: rotate(90deg);
+}
+
+.cdg-si-toggle-spacer {
+  display: inline-block;
+  width: 18px;
+  flex-shrink: 0;
+}
+
+.cdg-si-row.cdg-si-child {
   display: none;
-  padding: 4px 0 8px;
-  border-top: 1px solid var(--cdg-border);
   background: var(--cdg-muted);
 }
 
-.cdg-si-row.cdg-si-open .cdg-si-body {
-  display: block;
+.cdg-si-row.cdg-si-child.cdg-si-open {
+  display: grid;
+}
+
+/* Indent child titles to line up under the parent's title (18px toggle +
+   10px gap + 20px icon + 10px gap = 58px). */
+.cdg-si-main-child {
+  padding-left: 58px;
+}
+
+.cdg-si-title-child {
+  color: var(--cdg-fg-2);
+  font-weight: 400;
 }
 
 /* ── Custom Menu Links repeater ── */

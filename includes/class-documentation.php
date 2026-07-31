@@ -32,6 +32,20 @@ class CDG_Core_Documentation
     ];
 
     /**
+     * Default dashboard column for each documentation category's widget
+     * (matched by term slug). 'normal' = column 1 (main), 'side' = column 2,
+     * 'column3' = column 3. Any category not listed here falls back to
+     * 'normal'. Note: a 3rd/4th column only renders for users who have set
+     * "Number of Columns" to 3+ under Screen Options on the Dashboard page —
+     * that's a per-user WordPress preference this plugin doesn't override.
+     */
+    public const CATEGORY_DASHBOARD_COLUMNS = [
+        'getting-started' => 'normal',
+        'advanced'        => 'side',
+        'troubleshooting' => 'column3',
+    ];
+
+    /**
      * Plugin instance
      *
      * @var CDG_Core
@@ -193,12 +207,15 @@ class CDG_Core_Documentation
 
             if (!is_wp_error($categories)) {
                 foreach ($categories as $category) {
+                    $context = self::CATEGORY_DASHBOARD_COLUMNS[$category->slug] ?? 'normal';
+
                     wp_add_dashboard_widget(
                         'cdg_doc_' . $category->slug,
                         sprintf(__('Docs: %s', 'cdg-core'), $category->name),
                         [$this, 'render_category_widget'],
                         null,
-                        ['category' => $category]
+                        ['category' => $category],
+                        $context
                     );
                 }
             }

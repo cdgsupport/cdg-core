@@ -2,8 +2,11 @@
 /**
  * Plugin Visibility & Sidebar Manager
  *
- * Renames and hides top-level sidebar menu entries per-user, injects custom
- * menu links, and reorders the admin sidebar per-user via the admin_menu hook.
+ * Renames and hides top-level sidebar menu entries per-role, injects custom
+ * menu links, and reorders the admin sidebar per-role via the admin_menu hook.
+ * Targetable roles are Manager and Staff (see CDG_Core_Roles::target_roles())
+ * — Agency and any native WordPress role are never targeted, so those users
+ * always see the full, unmodified sidebar.
  *
  * @package CDG_Core
  * @since 1.5.0
@@ -43,12 +46,13 @@ class CDG_Core_Plugin_Visibility
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * Persist all top-level admin menu items (including separators) into a
-     * transient so the settings UI always has the full, unmodified list.
+     * Persist all top-level admin menu items (including separators), each
+     * with its submenu items nested underneath, into a transient so the
+     * settings UI always has the full, unmodified list.
      */
     public function capture_sidebar_menu(): void
     {
-        global $menu;
+        global $menu, $submenu;
         if (!is_array($menu)) {
             return;
         }
@@ -75,11 +79,35 @@ class CDG_Core_Plugin_Visibility
             $icon_raw = $item[6] ?? '';
             $icon     = preg_replace('/^dashicons-/', '', $icon_raw);
 
+            // Submenu items for this parent (WordPress often duplicates the
+            // parent as the first submenu entry — that's expected and kept
+            // as-is, since some sites rename it independently of the parent).
+            $subs = [];
+            if (!$is_separator && isset($submenu[$slug]) && is_array($submenu[$slug])) {
+                foreach ($submenu[$slug] as $sub_item) {
+                    $sub_slug = $sub_item[2] ?? '';
+                    if ($sub_slug === '') {
+                        continue;
+                    }
+
+                    $sub_title = trim(wp_strip_all_tags($sub_item[0] ?? $sub_slug));
+                    if ($sub_title === '') {
+                        $sub_title = $sub_slug;
+                    }
+
+                    $subs[$sub_slug] = [
+                        'slug'  => $sub_slug,
+                        'title' => $sub_title,
+                    ];
+                }
+            }
+
             $items[$slug] = [
                 'slug'      => $slug,
                 'title'     => $title,
                 'icon'      => $icon,
                 'separator' => $is_separator,
+                'submenu'   => $subs,
             ];
         }
 
@@ -89,7 +117,15 @@ class CDG_Core_Plugin_Visibility
         }
     }
 
-    /** @return array<string, array{slug:string,title:string,icon:string,separator:bool}> */
+    /**
+     * @return array<string, array{
+     *     slug:string,
+     *     title:string,
+     *     icon:string,
+     *     separator:bool,
+     *     submenu:array<string, array{slug:string,title:string}>
+     * }>
+     */
     public static function get_captured_menu_items(): array
     {
         $items = get_transient('cdg_sidebar_menu_items');
@@ -107,16 +143,18 @@ class CDG_Core_Plugin_Visibility
 
     public function apply_sidebar_changes(): void
     {
-        global $menu;
+        global $menu, $submenu;
         if (!is_array($menu)) {
             return;
         }
 
-        $user_id = get_current_user_id();
-        $names   = (array) $this->plugin->get_setting('sidebar_entry_names');
-        $hidden  = (array) $this->plugin->get_setting('sidebar_entry_hidden');
+        $user_roles  = wp_get_current_user()->roles;
+        $names       = (array) $this->plugin->get_setting('sidebar_entry_names');
+        $hidden      = (array) $this->plugin->get_setting('sidebar_entry_hidden');
+        $sub_names   = (array) $this->plugin->get_setting('sidebar_submenu_names');
+        $sub_hidden  = (array) $this->plugin->get_setting('sidebar_submenu_hidden');
 
-        if (empty($names) && empty($hidden)) {
+        if (empty($names) && empty($hidden) && empty($sub_names) && empty($sub_hidden)) {
             return;
         }
 
@@ -131,11 +169,39 @@ class CDG_Core_Plugin_Visibility
                 $menu[$pos][0] = esc_html($names[$slug]);
             }
 
-            // Hide (per-user).
+            // Hide (per-role — Agency and native roles are never listed
+            // here, so they're never affected).
             if (isset($hidden[$slug])) {
-                $uids = array_map('absint', (array) $hidden[$slug]);
-                if (in_array($user_id, $uids, true)) {
+                $roles = (array) $hidden[$slug];
+                if (array_intersect($user_roles, $roles)) {
                     remove_menu_page($slug);
+                    // Parent is gone — its submenu is inaccessible from the
+                    // nav either way, so there's nothing more to do here.
+                    continue;
+                }
+            }
+
+            // Submenu rename / hide for this parent.
+            if (isset($submenu[$slug]) && is_array($submenu[$slug])) {
+                if (isset($sub_names[$slug]) && is_array($sub_names[$slug])) {
+                    foreach ($submenu[$slug] as $sub_pos => $sub_item) {
+                        $sub_slug = $sub_item[2] ?? '';
+                        if (
+                            $sub_slug !== '' &&
+                            isset($sub_names[$slug][$sub_slug]) &&
+                            $sub_names[$slug][$sub_slug] !== ''
+                        ) {
+                            $submenu[$slug][$sub_pos][0] = esc_html($sub_names[$slug][$sub_slug]);
+                        }
+                    }
+                }
+
+                if (isset($sub_hidden[$slug]) && is_array($sub_hidden[$slug])) {
+                    foreach ($sub_hidden[$slug] as $sub_slug => $sub_roles) {
+                        if (array_intersect($user_roles, (array) $sub_roles)) {
+                            remove_submenu_page($slug, $sub_slug);
+                        }
+                    }
                 }
             }
         }
@@ -154,8 +220,8 @@ class CDG_Core_Plugin_Visibility
             return;
         }
 
-        $user_id = get_current_user_id();
-        $max_pos = !empty($menu) ? max(array_keys($menu)) : 80;
+        $user_roles = wp_get_current_user()->roles;
+        $max_pos    = !empty($menu) ? max(array_keys($menu)) : 80;
 
         foreach ($links as $index => $link) {
             if (!is_array($link)) {
@@ -168,9 +234,9 @@ class CDG_Core_Plugin_Visibility
                 continue;
             }
 
-            // Visibility check.
-            $hidden_for = array_map('absint', (array) ($link['hidden_for'] ?? []));
-            if (in_array($user_id, $hidden_for, true)) {
+            // Visibility check (per-role).
+            $hidden_for = (array) ($link['hidden_for'] ?? []);
+            if (array_intersect($user_roles, $hidden_for)) {
                 continue;
             }
 
@@ -211,12 +277,21 @@ class CDG_Core_Plugin_Visibility
             return;
         }
 
-        $user_id = get_current_user_id();
-        $orders  = (array) $this->plugin->get_setting('sidebar_menu_order');
-        $raw     = $orders[$user_id] ?? '';
-        $order   = is_array($raw)
-            ? $raw
-            : (array) json_decode((string) $raw, true);
+        $user_roles = wp_get_current_user()->roles;
+        $orders     = (array) $this->plugin->get_setting('sidebar_menu_order');
+
+        // Use the first role (in the user's role list) that has a saved
+        // order. Most users only ever have one role.
+        $order = [];
+        foreach ($user_roles as $role) {
+            if (!empty($orders[$role])) {
+                $raw   = $orders[$role];
+                $order = is_array($raw)
+                    ? $raw
+                    : (array) json_decode((string) $raw, true);
+                break;
+            }
+        }
 
         if (empty($order)) {
             return;

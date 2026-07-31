@@ -29,6 +29,7 @@
     bindToggle("enable_documentation", "cdg-doc-sub-settings");
     bindToggle("enable_cpt_widgets",   "cdg-cpt-sub-settings");
     bindToggle("enable_custom_login",  "cdg-login-sub-settings");
+    bindToggle("enable_custom_roles",  "cdg-roles-sub-settings");
 
     // ── Post revisions: disable limit input unless "limited" is selected ──
     var revisionInputs = document.querySelectorAll('[name="post_revisions_mode"]');
@@ -115,65 +116,6 @@
       }
     }
 
-    // ── Admin bar logo media picker ──
-    var adminBarLogoUploadBtn = document.getElementById("cdg-adminbar-logo-upload");
-    if (adminBarLogoUploadBtn && window.wp && wp.media) {
-      var adminBarMediaFrame;
-
-      adminBarLogoUploadBtn.addEventListener("click", function (e) {
-        e.preventDefault();
-
-        if (adminBarMediaFrame) {
-          adminBarMediaFrame.open();
-          return;
-        }
-
-        adminBarMediaFrame = wp.media({
-          title: "Select Admin Bar Logo",
-          button: { text: "Use this image" },
-          multiple: false,
-          library: { type: "image" },
-        });
-
-        adminBarMediaFrame.on("select", function () {
-          var attachment = adminBarMediaFrame
-            .state()
-            .get("selection")
-            .first()
-            .toJSON();
-
-          document.getElementById("cdg-adminbar-logo-id").value = attachment.id;
-
-          var img = document.getElementById("cdg-adminbar-logo-img");
-          if (img) {
-            img.src = attachment.url;
-          }
-
-          var preview = document.getElementById("cdg-adminbar-logo-preview");
-          if (preview) preview.style.display = "block";
-
-          adminBarLogoUploadBtn.textContent = "Change Logo";
-
-          var removeBtn = document.getElementById("cdg-adminbar-logo-remove");
-          if (removeBtn) removeBtn.style.display = "inline-flex";
-        });
-
-        adminBarMediaFrame.open();
-      });
-
-      var adminBarLogoRemoveBtn = document.getElementById("cdg-adminbar-logo-remove");
-      if (adminBarLogoRemoveBtn) {
-        adminBarLogoRemoveBtn.addEventListener("click", function (e) {
-          e.preventDefault();
-          document.getElementById("cdg-adminbar-logo-id").value = "";
-          var preview = document.getElementById("cdg-adminbar-logo-preview");
-          if (preview) preview.style.display = "none";
-          adminBarLogoUploadBtn.textContent = "Select Logo";
-          this.style.display = "none";
-        });
-      }
-    }
-
     // ── Code Snippets repeater ──
     var snippetsList    = document.getElementById("cdg-snippets-list");
     var snippetTemplate = document.getElementById("cdg-snippet-template");
@@ -246,11 +188,18 @@
       colorHexInput.addEventListener("input", syncSwatch);
     }
 
-    // ── Sidebar tab: accordion rows ──
-    document.querySelectorAll(".cdg-si-header").forEach(function (btn) {
+    // ── Sidebar tab: submenu expand/collapse ──
+    document.querySelectorAll(".cdg-si-toggle").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        var row = btn.closest(".cdg-si-row");
-        if (row) row.classList.toggle("cdg-si-open");
+        var parent   = btn.dataset.parent;
+        var expanded = btn.getAttribute("aria-expanded") === "true";
+
+        btn.setAttribute("aria-expanded", expanded ? "false" : "true");
+        btn.closest(".cdg-si-row").classList.toggle("cdg-si-parent-open", !expanded);
+
+        document.querySelectorAll('.cdg-si-child[data-parent="' + parent + '"]').forEach(function (row) {
+          row.classList.toggle("cdg-si-open", !expanded);
+        });
       });
     });
 
@@ -503,20 +452,20 @@
       syncLinksEmpty();
     }
 
-    // ── Sidebar tab: per-user drag-and-drop ordering ──
+    // ── Sidebar tab: per-role drag-and-drop ordering ──
     var orderTabs = document.querySelectorAll(".cdg-order-tab");
     var orderPanels = document.querySelectorAll(".cdg-order-user");
 
     if (orderTabs.length) {
       orderTabs.forEach(function (tab) {
         tab.addEventListener("click", function () {
-          var uid = tab.dataset.uid;
+          var role = tab.dataset.role;
 
           orderTabs.forEach(function (t) { t.classList.remove("cdg-order-tab-active"); });
           tab.classList.add("cdg-order-tab-active");
 
           orderPanels.forEach(function (panel) {
-            panel.style.display = panel.dataset.uid === uid ? "" : "none";
+            panel.style.display = panel.dataset.role === role ? "" : "none";
           });
         });
       });

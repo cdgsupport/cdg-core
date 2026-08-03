@@ -2,7 +2,7 @@
 
 WordPress optimizations, security hardening, and agency features for Crawford Design Group client sites.
 
-## Version 1.9.1
+## Version 1.9.2
 
 ### Requirements
 
@@ -201,13 +201,16 @@ GITHUB_TOKEN="your_token" ./deploy-cdg-core.sh development
 
 ### Changelog
 
-#### 1.9.1
+#### 1.9.2
 
-- Restored Plugin Visibility (removed during the 1.9.0 sidebar restructure, originally added in 1.6.5) as a new card in the Sidebar tab: hide specific installed plugins from the Plugins page per role. Targetable roles now include the native WordPress roles (Administrator, Editor, Author, Contributor, Subscriber) in addition to Manager/Staff, so a plugin can be hidden from a client even on sites that never enable custom roles. Agency always bypasses this and sees every plugin.
 - Agency is no longer manually assignable from the Add User / Edit User / Bulk Edit role dropdowns, regardless of the "Hide Default WordPress Roles" toggle. Instead, added an **Agency Email** setting (Roles tab, default `support@crawforddesigngp.com`) — the account holding that email is automatically switched to Agency, replacing whatever role it had, on login, account creation, and profile edits.
 - "Hide Default WordPress Roles" now hides Editor, Author, Contributor, and Subscriber only; Administrator always stays selectable in those dropdowns.
 - Sidebar Menu Items and Custom Menu Links can now also be hidden from **Administrator**, not just Manager/Staff (`CDG_Core_Roles::target_roles()` gained a third entry).
 - Removed the Sidebar tab's "Menu Order" card (per-role drag-and-drop sidebar reordering) and its underlying `sidebar_menu_order` setting entirely.
+
+#### 1.9.1
+
+- Restored Plugin Visibility (removed during the 1.9.0 sidebar restructure, originally added in 1.6.5) as a new card in the Sidebar tab: hide specific installed plugins from the Plugins page per role. Targetable roles now include the native WordPress roles (Administrator, Editor, Author, Contributor, Subscriber) in addition to Manager/Staff, so a plugin can be hidden from a client even on sites that never enable custom roles. Agency always bypasses this and sees every plugin.
 
 #### 1.9.0
 

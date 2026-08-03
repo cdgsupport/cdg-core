@@ -2,7 +2,7 @@
 
 WordPress optimizations, security hardening, and agency features for Crawford Design Group client sites.
 
-## Version 1.9.0
+## Version 1.9.1
 
 ### Requirements
 
@@ -201,12 +201,15 @@ GITHUB_TOKEN="your_token" ./deploy-cdg-core.sh development
 
 ### Changelog
 
+#### 1.9.1
+
+- Restored Plugin Visibility (removed during the 1.9.0 sidebar restructure, originally added in 1.6.5) as a new card in the Sidebar tab: hide specific installed plugins from the Plugins page per role. Targetable roles now include the native WordPress roles (Administrator, Editor, Author, Contributor, Subscriber) in addition to Manager/Staff, so a plugin can be hidden from a client even on sites that never enable custom roles. Agency always bypasses this and sees every plugin.
+
 #### 1.9.0
 
 - Added Roles tab: opt-in **Agency / Manager / Staff** custom roles (Agency = full Administrator clone for CDG staff; Manager = Administrator minus plugin/theme installs, user management, and core updates; Staff = clone of Editor). Includes an option to hide native WordPress roles from the role-assignment dropdowns.
 - Sidebar tab reworked to target the new **Manager** and **Staff** roles directly instead of individual users; Agency always sees the full, unmodified sidebar
 - Added submenu-level renaming and hiding to the Sidebar tab (previously top-level menu items only)
-- Restored Plugin Visibility (removed during this same restructure, originally added in 1.6.5) as a new card in the Sidebar tab: hide specific installed plugins from the Plugins page per role. Targetable roles now include the native WordPress roles (Administrator, Editor, Author, Contributor, Subscriber) in addition to Manager/Staff, so a plugin can be hidden from a client even on sites that never enable custom roles. Agency always bypasses this and sees every plugin.
 - Documentation dashboard widgets now support per-category dashboard column placement
 - Added one-time migration to clear the legacy default "Custom Admin CSS" value for sites that never customized it, without touching sites that did
 - New file: `includes/class-roles.php`

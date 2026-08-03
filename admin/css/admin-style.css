@@ -955,6 +955,71 @@ textarea.cdg-input {
   padding-left: 58px;
 }
 
+/* ── Plugin Visibility grid (Sidebar tab) ──
+   Column count varies with the number of hideable roles (native WP roles
+   plus Manager/Staff once custom roles are enabled), so — unlike the fixed
+   4-column .cdg-si-row grid above — this uses flexbox with a fixed
+   flex-basis per role column instead of a hard-coded column count. */
+.cdg-pv-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.cdg-pv-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 9px 20px;
+  border-bottom: 1px solid var(--cdg-border);
+}
+
+.cdg-pv-row:last-child {
+  border-bottom: none;
+}
+
+.cdg-pv-row-head {
+  padding: 8px 20px;
+  background: var(--cdg-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--cdg-muted-fg);
+}
+
+.cdg-pv-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--cdg-fg);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.cdg-pv-main .cdg-widget-id {
+  font-size: 11px;
+  color: var(--cdg-muted-fg);
+  font-family: "Courier New", monospace;
+  background: var(--cdg-surface);
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid var(--cdg-border);
+}
+
+.cdg-pv-role-col {
+  flex: 0 0 92px;
+  display: flex;
+  justify-content: center;
+}
+
+.cdg-pv-row-head .cdg-pv-role-col {
+  text-align: center;
+  white-space: normal;
+  line-height: 1.3;
+}
+
 .cdg-si-title-child {
   color: var(--cdg-fg-2);
   font-weight: 400;

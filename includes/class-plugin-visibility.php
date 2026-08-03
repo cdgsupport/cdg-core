@@ -8,6 +8,11 @@
  * — Agency and any native WordPress role are never targeted, so those users
  * always see the full, unmodified sidebar.
  *
+ * Also filters the Installed Plugins list itself (`all_plugins`) so specific
+ * plugins can be hidden from any role — native WordPress roles included, not
+ * just Manager/Staff. Agency always bypasses this and sees every plugin (see
+ * CDG_Core_Roles::hideable_roles()).
+ *
  * @package CDG_Core
  * @since 1.5.0
  */
@@ -39,6 +44,9 @@ class CDG_Core_Plugin_Visibility
         // Invalidate cache when the active plugin set changes.
         add_action('activated_plugin',   [self::class, 'invalidate_menu_cache']);
         add_action('deactivated_plugin', [self::class, 'invalidate_menu_cache']);
+
+        // Hide configured plugins from the Installed Plugins list per-role.
+        add_filter('all_plugins', [$this, 'filter_hidden_plugins']);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -352,12 +360,49 @@ class CDG_Core_Plugin_Visibility
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Plugin list visibility
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Remove configured plugins from the Installed Plugins list (and
+     * anywhere else `all_plugins` is consulted) for the current user's
+     * role(s). Agency always bypasses this entirely, regardless of what's
+     * configured — including on sites where a user happens to also hold a
+     * native role like Administrator alongside Agency.
+     *
+     * @param array<string, array<string, string>> $plugins Installed plugins keyed by plugin file.
+     * @return array<string, array<string, string>>
+     */
+    public function filter_hidden_plugins(array $plugins): array
+    {
+        $user_roles = wp_get_current_user()->roles;
+
+        if (in_array(CDG_Core_Roles::AGENCY, $user_roles, true)) {
+            return $plugins;
+        }
+
+        $hidden = (array) $this->plugin->get_setting('hidden_plugins');
+        if (empty($hidden)) {
+            return $plugins;
+        }
+
+        foreach ($hidden as $plugin_file => $roles) {
+            if (array_intersect($user_roles, (array) $roles)) {
+                unset($plugins[$plugin_file]);
+            }
+        }
+
+        return $plugins;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Utilities
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * Return all installed plugins (for use in other parts of the plugin if
-     * needed — no longer used for list-page management).
+     * Return all installed plugins — used both by the Plugin Visibility
+     * card in the settings UI and by filter_hidden_plugins() above (via
+     * the admin sanitizer, to validate submitted plugin files).
      *
      * @return array<string, array<string, string>>
      */

@@ -181,6 +181,9 @@ input[type=text], input[type=email], input[type=url], input[type=password], inpu
     "custom_menu_links"      => [],   // [{id, title, icon, link, target, hidden_for:[role_slug,...]}]
     "sidebar_menu_order"     => [],   // role_slug => [slug, ...] (top-level items only)
 
+    // Plugin visibility (Sidebar tab)
+    "hidden_plugins" => [],   // plugin_file => [role_slug, ...] — hidden from those roles; Agency always sees every plugin
+
     // Login Page
     "login_logo_id" => 0,
     "enable_custom_login" => true,

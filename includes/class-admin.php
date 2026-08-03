@@ -347,6 +347,31 @@ class CDG_Core_Admin
         }
         $s["sidebar_menu_order"] = $menu_order;
 
+        // ── Plugin visibility: plugin_file => [role_slug, ...] ───────────
+        // Any registered role except Agency is a valid target here (native
+        // WordPress roles included), unlike $target_roles above which is
+        // Manager/Staff only.
+        $all_plugin_files = array_keys(CDG_Core_Plugin_Visibility::get_all_plugins());
+        $hideable_roles   = array_keys(CDG_Core_Roles::hideable_roles());
+
+        $hidden_plugins = [];
+        foreach ((array) ($input["hidden_plugins"] ?? []) as $plugin_file => $roles) {
+          $plugin_file = sanitize_text_field(wp_unslash((string) $plugin_file));
+          if (!in_array($plugin_file, $all_plugin_files, true)) {
+            continue;
+          }
+          $validated = array_values(
+            array_intersect(
+              array_map("sanitize_key", (array) $roles),
+              $hideable_roles
+            )
+          );
+          if (!empty($validated)) {
+            $hidden_plugins[$plugin_file] = $validated;
+          }
+        }
+        $s["hidden_plugins"] = $hidden_plugins;
+
         break;
 
       case "snippets":
@@ -1814,6 +1839,73 @@ class CDG_Core_Admin
           echo "</div>";
           $first = false;
         }
+      }
+    );
+
+    // ── Card 4: Plugin Visibility ──────────────────────────────────────────
+    $this->card(
+      "Plugin Visibility",
+      "Hide specific installed plugins from the Plugins page for a role. Unlike the controls above, this isn&#8217;t limited to Manager and Staff &#8212; native WordPress roles (Administrator, Editor, etc.) can be targeted too, so a plugin stays hidden from a client even if they&#8217;re not on a custom role. <strong>Agency always sees every plugin</strong>, regardless of what&#8217;s checked here.",
+      function () use ($s) {
+        $all_plugins    = CDG_Core_Plugin_Visibility::get_all_plugins();
+        $hidden_plugins = (array) ($s["hidden_plugins"] ?? []);
+        $hideable_roles = CDG_Core_Roles::hideable_roles();
+
+        if (empty($all_plugins)) {
+          echo '<div class="cdg-empty">' . esc_html__("No plugins found.", "cdg-core") . "</div>";
+          return;
+        }
+
+        if (empty($hideable_roles)) {
+          echo '<div class="cdg-empty">' . esc_html__("No roles available to hide plugins from.", "cdg-core") . "</div>";
+          return;
+        }
+
+        uasort($all_plugins, fn($a, $b) => strcasecmp($a["Name"] ?? "", $b["Name"] ?? ""));
+
+        echo '<div class="cdg-pv-list">';
+
+        // Column headers.
+        echo '<div class="cdg-pv-row cdg-pv-row-head">';
+        echo '<div class="cdg-pv-main">' . esc_html__("Plugin", "cdg-core") . "</div>";
+        foreach ($hideable_roles as $label) {
+          echo '<div class="cdg-pv-role-col">' . esc_html($label) . "</div>";
+        }
+        echo "</div>";
+
+        foreach ($all_plugins as $plugin_file => $plugin_data) {
+          $name         = $plugin_data["Name"] ?? $plugin_file;
+          $hidden_roles = (array) ($hidden_plugins[$plugin_file] ?? []);
+          $file_attr    = esc_attr($plugin_file);
+
+          echo '<div class="cdg-pv-row">';
+          echo '<div class="cdg-pv-main">';
+          echo '<span class="cdg-si-title">' . esc_html($name) . "</span>";
+          echo ' <span class="cdg-widget-id">' . esc_html($plugin_file) . "</span>";
+          echo "</div>";
+
+          foreach ($hideable_roles as $role_slug => $label) {
+            echo '<div class="cdg-pv-role-col">';
+            echo '<label class="cdg-check-item cdg-check-solo" title="' .
+              esc_attr(
+                sprintf(
+                  /* translators: %s: role label, e.g. "Manager" */
+                  __("Hide from %s", "cdg-core"),
+                  $label
+                )
+              ) . '">';
+            echo '<input type="checkbox" name="hidden_plugins[' . $file_attr . '][]" value="' .
+              esc_attr($role_slug) . '"' .
+              (in_array($role_slug, $hidden_roles, true) ? " checked" : "") . ">";
+            echo '<span class="cdg-check-box"></span>';
+            echo "</label>";
+            echo "</div>";
+          }
+
+          echo "</div>";
+        }
+
+        echo "</div>";
       }
     );
   }

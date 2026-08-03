@@ -200,4 +200,28 @@ class CDG_Core_Roles
             self::CLIENT_STAFF   => __('Staff', 'cdg-core'),
         ];
     }
+
+    /**
+     * Roles that can be targeted by the Sidebar tab's Plugin Visibility
+     * controls: every currently registered role except Agency. Unlike
+     * target_roles() (Manager/Staff only — the two roles this plugin
+     * creates for content-only client users), this includes the native
+     * WordPress roles (Administrator, Editor, Author, Contributor,
+     * Subscriber), so a plugin can be hidden from a client even on sites
+     * that never turn on "Enable Custom Roles" and just use default roles.
+     *
+     * Reflects live registered roles — Manager/Staff only appear once
+     * "Enable Custom Roles" has actually registered them; they drop back
+     * out (along with any saved selections for them) if that's turned off
+     * again, since the role no longer exists to match against.
+     *
+     * @return array<string, string> role slug => label
+     */
+    public static function hideable_roles(): array
+    {
+        $roles = wp_roles()->get_names();
+        unset($roles[self::AGENCY]);
+
+        return array_map('translate_user_role', $roles);
+    }
 }

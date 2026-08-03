@@ -2,7 +2,7 @@
 
 WordPress optimizations, security hardening, and agency features for Crawford Design Group client sites.
 
-## Version 1.9.2
+## Version 1.9.3
 
 ### Requirements
 
@@ -56,6 +56,7 @@ plugins/
     |   +-- class-plugin-visibility.php <- Plugin visibility control
     |   +-- class-security.php        <- Security hardening
     |   +-- class-svg-support.php     <- SVG upload support
+    |   +-- plugin-update-checker/    <- Vendored update checker (GitHub Releases)
     +-- admin/
         +-- js/
         |   +-- admin-script.js
@@ -199,7 +200,27 @@ GITHUB_TOKEN="your_token" ./deploy-cdg-core.sh anchorage
 GITHUB_TOKEN="your_token" ./deploy-cdg-core.sh development
 ```
 
+### Updating an Installed Site (wp-admin)
+
+As of 1.9.3, CDG Core ships with [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker) (vendored at `includes/plugin-update-checker/`), pointed at this repo's GitHub Releases. This is what makes "Update available" and the native "Update Now" button show up on a client site's Plugins page — sites no longer need the manual "re-upload the zip and replace" flow, which could throw a critical error on swap.
+
+**Cutting a release:**
+
+1. Bump the `Version:` header in `cdg-core.php` (and `CDG_CORE_VERSION`) to the new version number.
+2. Build the plugin zip the way you normally do (`cdg-core.zip` — same file the deploy script and manual uploads use).
+3. On GitHub, draft a new Release. Tag it (e.g. `v1.9.3`), give it a title/changelog, and **attach `cdg-core.zip` as a release asset**.
+4. Publish the release.
+
+Installed sites will see the update within ~12 hours (WordPress's normal update-check cadence), or immediately if an admin clicks "Check again" on the Updates screen. From there it's a normal one-click "Update Now" — no deactivate/reactivate workaround needed.
+
+Auto-updates are not enabled by default. If you want a given site to apply releases unattended, an admin can turn on "Enable auto-updates" for CDG Core from that site's Plugins page — this uses WordPress's own fatal-error-protected update path.
+
 ### Changelog
+
+#### 1.9.3
+
+- Added GitHub-based automatic updates: vendored [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker) (`includes/plugin-update-checker/`), pointed at this repo's Releases. Client sites now get a native "Update available" / "Update Now" prompt on the Plugins page instead of requiring a manual zip re-upload. See "Updating an Installed Site" below for the release process. Auto-updates are off by default.
+- Hardened `cdg-core.php` against being parsed twice in a single request (unguarded class/constant/function declarations could fatal — "critical error" — if the plugin's files were swapped mid-request during a manual update, requiring a deactivate/reactivate to recover). All top-level declarations are now wrapped in `class_exists()` / `function_exists()` guards.
 
 #### 1.9.2
 

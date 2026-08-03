@@ -3,7 +3,7 @@
  * Plugin Name: CDG Core
  * Plugin URI: https://crawforddesigngroup.com
  * Description: WordPress optimizations, security hardening, and agency features for Crawford Design Group client sites.
- * Version: 1.9.2
+ * Version: 1.9.3
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author: Crawford Design Group
@@ -18,10 +18,25 @@ if (!defined("ABSPATH")) {
   exit();
 }
 
+// Update checker library (see "Automatic Updates" block below). The `use`
+// import has to live at the top level of the file — PHP doesn't allow it
+// inside an `if` block — but require_once is keyed on the file's absolute
+// path, so it's already safe to run on every load, guard or no guard.
+require_once plugin_dir_path(__FILE__) . "includes/plugin-update-checker/plugin-update-checker.php";
+
+use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
+
+// Guard everything below against being parsed twice in the same request —
+// e.g. if plugin files get swapped mid-request during a manual "replace"
+// update and briefly double-included. Without this, redeclaring the class
+// or the cdg_core() function further down is a fatal error ("critical
+// error" on the front end) rather than a harmless no-op.
+if (!class_exists("CDG_Core")) {
+
 /**
  * Plugin Constants
  */
-define("CDG_CORE_VERSION", "1.9.2");
+define("CDG_CORE_VERSION", "1.9.3");
 define("CDG_CORE_DIR", plugin_dir_path(__FILE__));
 define("CDG_CORE_URL", plugin_dir_url(__FILE__));
 define("CDG_CORE_BASENAME", plugin_basename(__FILE__));
@@ -46,6 +61,28 @@ spl_autoload_register(function (string $class): void {
     require_once $file_path;
   }
 });
+
+/**
+ * Automatic Updates (GitHub Releases)
+ *
+ * CDG Core isn't listed on wordpress.org, so WordPress has no way to know
+ * a new version exists unless something tells it. This points the update
+ * checker at the crawforddesign/cdg-core GitHub repo's Releases — tag a
+ * release, attach the built cdg-core.zip as a release asset, and bump the
+ * "Version" header above to match. WordPress will then show a normal
+ * "Update available" notice + "Update Now" button on the Plugins page,
+ * going through core's update flow instead of the manual upload/replace
+ * flow. Auto-updates are intentionally left off here; this only makes the
+ * checker and button appear — nothing installs without a manual click.
+ *
+ * See README.md for the full release steps.
+ */
+$cdg_core_update_checker = PucFactory::buildUpdateChecker(
+  "https://github.com/crawforddesign/cdg-core/",
+  __FILE__,
+  "cdg-core"
+);
+$cdg_core_update_checker->getVcsApi()->enableReleaseAssets('/\.zip($|[?&#])/i');
 
 /**
  * Main CDG Core Class
@@ -735,3 +772,5 @@ function cdg_core(): CDG_Core
 {
   return CDG_Core::get_instance();
 }
+
+} // end: if ( ! class_exists( 'CDG_Core' ) ) guard

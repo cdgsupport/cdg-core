@@ -171,15 +171,15 @@ input[type=text], input[type=email], input[type=url], input[type=password], inpu
 
     // Roles
     "enable_custom_roles" => false, // creates Agency / Manager / Staff roles
-    "hide_native_roles"   => false, // hides default WP roles from the role picker (requires enable_custom_roles)
+    "hide_native_roles"   => false, // hides Editor/Author/Contributor/Subscriber from the role picker (requires enable_custom_roles); Administrator always stays selectable
+    "agency_email" => CDG_Core_Roles::DEFAULT_AGENCY_EMAIL, // account with this email is auto-switched to Agency, replacing its current role
 
     // Sidebar management
     "sidebar_entry_names"    => [],   // menu_slug => display_name (global rename)
-    "sidebar_entry_hidden"   => [],   // menu_slug => [role_slug, ...] (cdg_client_manager / cdg_client_staff)
+    "sidebar_entry_hidden"   => [],   // menu_slug => [role_slug, ...] (administrator / cdg_client_manager / cdg_client_staff)
     "sidebar_submenu_names"  => [],   // parent_slug => [submenu_slug => display_name]
     "sidebar_submenu_hidden" => [],   // parent_slug => [submenu_slug => [role_slug, ...]]
     "custom_menu_links"      => [],   // [{id, title, icon, link, target, hidden_for:[role_slug,...]}]
-    "sidebar_menu_order"     => [],   // role_slug => [slug, ...] (top-level items only)
 
     // Plugin visibility (Sidebar tab)
     "hidden_plugins" => [],   // plugin_file => [role_slug, ...] — hidden from those roles; Agency always sees every plugin

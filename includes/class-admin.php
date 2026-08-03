@@ -198,6 +198,12 @@ class CDG_Core_Admin
       case "roles":
         $s["enable_custom_roles"] = !empty($input["enable_custom_roles"]);
         $s["hide_native_roles"]   = !empty($input["hide_native_roles"]);
+
+        // Keep the prior value if the submitted address isn't a valid email.
+        $agency_email = sanitize_email(wp_unslash((string) ($input["agency_email"] ?? "")));
+        if (is_email($agency_email)) {
+          $s["agency_email"] = $agency_email;
+        }
         break;
 
       case "sidebar":
@@ -314,43 +320,10 @@ class CDG_Core_Admin
         }
         $s["custom_menu_links"] = $custom_links;
 
-        // ── Per-role menu order: role_slug => [slug, ...] ────────────────
-        // Valid slugs = captured menu items + custom link slugs.
-        $custom_slugs  = array_map(
-          fn($l) => "cdg_link_" . ($l["id"] ?? ""),
-          $custom_links
-        );
-        $all_valid_slugs = array_merge($captured_slugs, $custom_slugs);
-
-        $menu_order = [];
-        foreach ((array) ($input["sidebar_menu_order"] ?? []) as $role => $raw_json) {
-          $role = sanitize_key($role);
-          if (!in_array($role, $target_roles, true)) {
-            continue;
-          }
-          $order = json_decode(
-            wp_unslash((string) $raw_json),
-            true
-          );
-          if (!is_array($order)) {
-            continue;
-          }
-          $validated = array_values(
-            array_filter(
-              $order,
-              fn($slug) => in_array($slug, $all_valid_slugs, true)
-            )
-          );
-          if (!empty($validated)) {
-            $menu_order[$role] = $validated;
-          }
-        }
-        $s["sidebar_menu_order"] = $menu_order;
-
         // ── Plugin visibility: plugin_file => [role_slug, ...] ───────────
-        // Any registered role except Agency is a valid target here (native
-        // WordPress roles included), unlike $target_roles above which is
-        // Manager/Staff only.
+        // Every registered role except Agency is a valid target here (all
+        // of $target_roles above, plus Editor/Author/Contributor/
+        // Subscriber, which aren't offered as Sidebar hide targets).
         $all_plugin_files = array_keys(CDG_Core_Plugin_Visibility::get_all_plugins());
         $hideable_roles   = array_keys(CDG_Core_Roles::hideable_roles());
 
@@ -1454,7 +1427,7 @@ class CDG_Core_Admin
       function () use ($s) {
         $this->row(
           "Enable Custom Roles",
-          "Registers three roles: <strong>Agency</strong> (clone of Administrator &#8212; full access, for CDG staff), <strong>Manager</strong> (Administrator capabilities minus plugin/theme installs, user management, and core updates), and <strong>Staff</strong> (clone of Editor &#8212; content only). Required for the Sidebar tab's role-based hide/order controls to have any effect.",
+          "Registers three roles: <strong>Agency</strong> (clone of Administrator &#8212; full access, for CDG staff), <strong>Manager</strong> (Administrator capabilities minus plugin/theme installs, user management, and core updates), and <strong>Staff</strong> (clone of Editor &#8212; content only). Required for the Sidebar tab's role-based hide controls and the Agency Email auto-assignment below to have any effect.",
           $this->sw("enable_custom_roles", $s["enable_custom_roles"])
         );
 
@@ -1462,8 +1435,15 @@ class CDG_Core_Admin
         echo '<div id="cdg-roles-sub-settings" class="' . esc_attr($sub_class) . '">';
 
         $this->row(
+          "Agency Email",
+          "The account with this email is automatically switched to the <strong>Agency</strong> role &#8212; replacing whatever role it currently has &#8212; on login, on account creation, and whenever its profile is edited. Agency is never selectable from a dropdown; this is the only way to assign it.",
+          '<input type="email" name="agency_email" value="' . esc_attr($s["agency_email"]) . '" placeholder="' . esc_attr(CDG_Core_Roles::DEFAULT_AGENCY_EMAIL) . '" class="cdg-input">',
+          true
+        );
+
+        $this->row(
           "Hide Default WordPress Roles",
-          "Removes Administrator, Editor, Author, Contributor, and Subscriber from the Add User / Edit User / Bulk Edit role dropdowns, so only Agency, Manager, and Staff can be newly assigned. Existing users keep whatever role they already have &#8212; nothing is reassigned automatically.",
+          "Removes Editor, Author, Contributor, and Subscriber from the Add User / Edit User / Bulk Edit role dropdowns, so only Administrator, Manager, and Staff can be newly assigned. Administrator always stays selectable, and Agency is never selectable regardless of this toggle &#8212; see Agency Email above. Existing users keep whatever role they already have &#8212; nothing is reassigned automatically.",
           $this->sw("hide_native_roles", $s["hide_native_roles"]),
           true
         );
@@ -1565,14 +1545,13 @@ class CDG_Core_Admin
     $submenu_names  = (array) ($s["sidebar_submenu_names"]  ?? []);
     $submenu_hidden = (array) ($s["sidebar_submenu_hidden"] ?? []);
     $custom_links   = array_values((array) ($s["custom_menu_links"]   ?? []));
-    $menu_order     = (array) ($s["sidebar_menu_order"] ?? []);
     $target_roles   = CDG_Core_Roles::target_roles(); // role_slug => label
 
     echo '<div class="cdg-notice cdg-notice-info">' .
       '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>' .
       "<div>" .
       esc_html__(
-        "Agency always sees the full, unmodified sidebar. The toggles below only affect the Manager and Staff roles.",
+        "Agency always sees the full, unmodified sidebar. The toggles below can target Administrator, Manager, and Staff.",
         "cdg-core"
       ) .
       "</div></div>";
@@ -1580,7 +1559,7 @@ class CDG_Core_Admin
     // ── Card 1: Sidebar Menu Items ─────────────────────────────────────────
     $this->card(
       "Sidebar Menu Items",
-      "Rename any admin sidebar entry or hide it from a client role. Items with submenu pages can be expanded to manage those too. Visit the WordPress dashboard once to populate this list.",
+      "Rename any admin sidebar entry or hide it from Administrator, Manager, or Staff. Items with submenu pages can be expanded to manage those too. Visit the WordPress dashboard once to populate this list.",
       function () use ($captured_items, $entry_names, $entry_hidden, $submenu_names, $submenu_hidden, $target_roles) {
         $real = array_filter($captured_items, fn($i) => !($i["separator"] ?? false));
 
@@ -1714,7 +1693,7 @@ class CDG_Core_Admin
     // ── Card 2: Custom Menu Links ──────────────────────────────────────────
     $this->card(
       "Custom Menu Links",
-      "Add custom links to the admin sidebar. Each link can be shown to everyone or hidden from a client role.",
+      "Add custom links to the admin sidebar. Each link can be shown to everyone or hidden from Administrator, Manager, or Staff.",
       function () use ($custom_links) {
         $count = count($custom_links);
 
@@ -1743,109 +1722,10 @@ class CDG_Core_Admin
       }
     );
 
-    // ── Card 3: Menu Order ─────────────────────────────────────────────────
-    $this->card(
-      "Menu Order",
-      "Drag items to set the sidebar order for each client role. Items not in the list appear at the bottom in their default order.",
-      function () use ($captured_items, $custom_links, $menu_order, $target_roles) {
-        if (empty($captured_items)) {
-          echo '<div class="cdg-empty">' .
-            esc_html__(
-              "Visit the Dashboard once to populate the menu item list.",
-              "cdg-core"
-            ) . "</div>";
-          return;
-        }
-
-        // ── Role tabs ───────────────────────────────────────────────────
-        echo '<div class="cdg-order-tabs">';
-        $first = true;
-        foreach ($target_roles as $role_slug => $label) {
-          $active = $first ? " cdg-order-tab-active" : "";
-          echo '<button type="button" class="cdg-order-tab' . $active . '"' .
-            ' data-role="' . esc_attr($role_slug) . '">' .
-            esc_html($label) .
-            "</button>";
-          $first = false;
-        }
-        echo "</div>";
-
-        // Build slug → item map (captured + custom links).
-        $all_items = [];
-        foreach ($captured_items as $slug => $item) {
-          $all_items[$slug] = [
-            "title"     => $item["separator"] ? "" : ($item["title"] ?? $slug),
-            "icon"      => $item["icon"]      ?? "",
-            "separator" => $item["separator"] ?? false,
-          ];
-        }
-        foreach ($custom_links as $link) {
-          $lid = "cdg_link_" . ($link["id"] ?? "");
-          $all_items[$lid] = [
-            "title"     => $link["title"] ?? "",
-            "icon"      => $link["icon"]  ?? "admin-generic",
-            "separator" => false,
-          ];
-        }
-
-        // Build the full ordered list per role.
-        $first = true;
-        foreach ($target_roles as $role_slug => $label) {
-          $saved_order = (array) ($menu_order[$role_slug] ?? []);
-
-          // Merge saved order first, then unseen items.
-          $ordered_slugs = $saved_order;
-          foreach (array_keys($all_items) as $slug) {
-            if (!in_array($slug, $ordered_slugs, true)) {
-              $ordered_slugs[] = $slug;
-            }
-          }
-
-          $hidden = $first ? "" : ' style="display:none;"';
-          echo '<div class="cdg-order-user" data-role="' . esc_attr($role_slug) . '"' . $hidden . ">";
-
-          $json_val = esc_attr(wp_json_encode($saved_order ?: []));
-          echo '<input type="hidden"' .
-            ' name="sidebar_menu_order[' . esc_attr($role_slug) . ']"' .
-            ' class="cdg-order-input" value="' . $json_val . '">';
-
-          echo '<ul class="cdg-drag-list">';
-          foreach ($ordered_slugs as $slug) {
-            if (!isset($all_items[$slug])) {
-              continue;
-            }
-            $item_data  = $all_items[$slug];
-            $is_sep     = $item_data["separator"];
-            $item_icon  = $item_data["icon"] ?? "";
-            $item_title = $item_data["title"] ?? "";
-            $sep_class  = $is_sep ? " cdg-drag-sep" : "";
-
-            echo '<li class="cdg-drag-item' . $sep_class . '"' .
-              ' data-slug="' . esc_attr($slug) . '" draggable="true">';
-            echo '<span class="cdg-drag-handle" aria-hidden="true">&#8942;</span>';
-            if ($is_sep) {
-              echo '<span class="cdg-drag-sep-line"></span>';
-            } else {
-              if ($item_icon !== "" && strpos($item_icon, "/") === false && $item_icon !== "div") {
-                echo '<span class="dashicons dashicons-' . esc_attr($item_icon) . ' cdg-drag-icon" aria-hidden="true"></span>';
-              } else {
-                echo '<span class="dashicons dashicons-admin-generic cdg-drag-icon" aria-hidden="true"></span>';
-              }
-              echo '<span class="cdg-drag-title">' . esc_html($item_title) . "</span>";
-            }
-            echo "</li>";
-          }
-          echo "</ul>";
-          echo "</div>";
-          $first = false;
-        }
-      }
-    );
-
-    // ── Card 4: Plugin Visibility ──────────────────────────────────────────
+    // ── Card 3: Plugin Visibility ──────────────────────────────────────────
     $this->card(
       "Plugin Visibility",
-      "Hide specific installed plugins from the Plugins page for a role. Unlike the controls above, this isn&#8217;t limited to Manager and Staff &#8212; native WordPress roles (Administrator, Editor, etc.) can be targeted too, so a plugin stays hidden from a client even if they&#8217;re not on a custom role. <strong>Agency always sees every plugin</strong>, regardless of what&#8217;s checked here.",
+      "Hide specific installed plugins from the Plugins page for a role. Unlike the controls above, this isn&#8217;t limited to Administrator, Manager, and Staff &#8212; every native WordPress role (Editor, Author, etc.) can be targeted too, so a plugin stays hidden from a client even if they&#8217;re not on a custom role. <strong>Agency always sees every plugin</strong>, regardless of what&#8217;s checked here.",
       function () use ($s) {
         $all_plugins    = CDG_Core_Plugin_Visibility::get_all_plugins();
         $hidden_plugins = (array) ($s["hidden_plugins"] ?? []);

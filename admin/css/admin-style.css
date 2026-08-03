@@ -852,11 +852,12 @@ textarea.cdg-input {
   flex-direction: column;
 }
 
-/* Track count assumes exactly 2 target roles (Manager, Staff) — see
-   CDG_Core_Roles::target_roles(). Update this if that ever changes. */
+/* Track count assumes exactly 3 target roles (Administrator, Manager,
+   Staff) — see CDG_Core_Roles::target_roles(). Update this if that ever
+   changes. */
 .cdg-si-row {
   display: grid;
-  grid-template-columns: 1fr 240px 120px 120px;
+  grid-template-columns: 1fr 240px 120px 120px 120px;
   align-items: center;
   gap: 16px;
   padding: 9px 20px;
@@ -1157,102 +1158,6 @@ textarea.cdg-input {
 .cdg-btn-icon:hover {
   color: #dc2626;
   border-color: #dc2626;
-}
-
-/* ── Drag-and-drop order list ── */
-.cdg-order-tabs {
-  display: flex;
-  gap: 4px;
-  padding: 12px 20px 0;
-  flex-wrap: wrap;
-}
-
-.cdg-order-tab {
-  padding: 5px 12px;
-  font-size: 12px;
-  font-weight: 500;
-  border: 1px solid var(--cdg-border);
-  border-radius: 6px;
-  background: none;
-  color: var(--cdg-muted-fg);
-  cursor: pointer;
-  transition: background 0.12s, color 0.12s;
-}
-
-.cdg-order-tab:hover {
-  background: var(--cdg-muted);
-  color: var(--cdg-fg);
-}
-
-.cdg-order-tab.cdg-order-tab-active {
-  background: var(--cdg-accent, #3858e9);
-  border-color: var(--cdg-accent, #3858e9);
-  color: #fff;
-}
-
-.cdg-order-user {
-  padding: 12px 20px;
-}
-
-.cdg-drag-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.cdg-drag-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 10px;
-  background: var(--cdg-bg);
-  border: 1px solid var(--cdg-border);
-  border-radius: 6px;
-  font-size: 13px;
-  cursor: grab;
-  user-select: none;
-  transition: box-shadow 0.12s, opacity 0.12s;
-}
-
-.cdg-drag-item:active {
-  cursor: grabbing;
-}
-
-.cdg-drag-item.cdg-dragging {
-  opacity: 0.4;
-}
-
-.cdg-drag-item.cdg-drag-over {
-  box-shadow: 0 -2px 0 0 var(--cdg-accent, #3858e9);
-}
-
-.cdg-drag-handle {
-  color: var(--cdg-muted-fg);
-  font-size: 16px;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.cdg-drag-item .dashicons {
-  font-size: 16px;
-  width: 18px;
-  height: 18px;
-  color: var(--cdg-muted-fg);
-  flex-shrink: 0;
-}
-
-.cdg-drag-sep .cdg-drag-sep-line {
-  flex: 1;
-  height: 1px;
-  background: var(--cdg-border);
-  margin: 0 4px;
-}
-
-.cdg-drag-sep {
-  opacity: 0.6;
 }
 
 /* ── Code Snippets repeater ── */

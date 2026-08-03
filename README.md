@@ -76,7 +76,7 @@ plugins/
 | **Performance**   | Gutenberg, queries, images, revisions                    |
 | **Gravity Forms** | Divi/GF compatibility fixes and auto-page generation     |
 | **Admin**         | Branding, theme color, custom CSS                        |
-| **Roles**         | Custom Agency / Manager / Staff roles                    |
+| **Roles**         | Custom Agency / Manager / Staff roles; Agency auto-assigned by email |
 | **Sidebar**       | Rename/hide sidebar menu items and submenus per role, plus per-role Plugin Visibility |
 
 ### SpinupWP Compatibility
@@ -155,9 +155,9 @@ Prevents Divi from deferring Gravity Forms scripts on pages with forms, fixing "
 
 When creating a new Gravity Forms form, an optional checkbox in the form creation flyout will automatically generate a draft `cdg_form` custom post type page pre-loaded with a Divi 5 GF Styler module pointed at the new form. A "View Form Page" button is injected next to the Save Form button in the form editor.
 
-### Plugins Tab
+### Plugin Visibility (Sidebar Tab)
 
-The Plugins tab lets you select specific plugins to hide from the WordPress Plugins page for all non-administrator users. Administrators always see every plugin. Plugins remain active - they are only hidden from the list view.
+The Sidebar tab's Plugin Visibility card lets you hide specific plugins from the WordPress Plugins page per role — Administrator, Manager, Staff, or any other native role, not just non-administrators. Agency always sees every plugin regardless of what's checked. Plugins remain active - they are only hidden from the list view.
 
 ### Heartbeat Control
 
@@ -204,6 +204,10 @@ GITHUB_TOKEN="your_token" ./deploy-cdg-core.sh development
 #### 1.9.1
 
 - Restored Plugin Visibility (removed during the 1.9.0 sidebar restructure, originally added in 1.6.5) as a new card in the Sidebar tab: hide specific installed plugins from the Plugins page per role. Targetable roles now include the native WordPress roles (Administrator, Editor, Author, Contributor, Subscriber) in addition to Manager/Staff, so a plugin can be hidden from a client even on sites that never enable custom roles. Agency always bypasses this and sees every plugin.
+- Agency is no longer manually assignable from the Add User / Edit User / Bulk Edit role dropdowns, regardless of the "Hide Default WordPress Roles" toggle. Instead, added an **Agency Email** setting (Roles tab, default `support@crawforddesigngp.com`) — the account holding that email is automatically switched to Agency, replacing whatever role it had, on login, account creation, and profile edits.
+- "Hide Default WordPress Roles" now hides Editor, Author, Contributor, and Subscriber only; Administrator always stays selectable in those dropdowns.
+- Sidebar Menu Items and Custom Menu Links can now also be hidden from **Administrator**, not just Manager/Staff (`CDG_Core_Roles::target_roles()` gained a third entry).
+- Removed the Sidebar tab's "Menu Order" card (per-role drag-and-drop sidebar reordering) and its underlying `sidebar_menu_order` setting entirely.
 
 #### 1.9.0
 

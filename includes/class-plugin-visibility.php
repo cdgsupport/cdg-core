@@ -2,16 +2,16 @@
 /**
  * Plugin Visibility & Sidebar Manager
  *
- * Renames and hides top-level sidebar menu entries per-role, injects custom
- * menu links, and reorders the admin sidebar per-role via the admin_menu hook.
- * Targetable roles are Manager and Staff (see CDG_Core_Roles::target_roles())
- * — Agency and any native WordPress role are never targeted, so those users
- * always see the full, unmodified sidebar.
+ * Renames and hides top-level sidebar menu entries per-role, and injects
+ * custom menu links, via the admin_menu hook. Targetable roles are
+ * Administrator, Manager, and Staff (see CDG_Core_Roles::target_roles())
+ * — Agency is never targeted, so it always sees the full, unmodified
+ * sidebar.
  *
  * Also filters the Installed Plugins list itself (`all_plugins`) so specific
- * plugins can be hidden from any role — native WordPress roles included, not
- * just Manager/Staff. Agency always bypasses this and sees every plugin (see
- * CDG_Core_Roles::hideable_roles()).
+ * plugins can be hidden from any role — every native WordPress role
+ * included, not just the three above. Agency always bypasses this and sees
+ * every plugin (see CDG_Core_Roles::hideable_roles()).
  *
  * @package CDG_Core
  * @since 1.5.0
@@ -34,9 +34,6 @@ class CDG_Core_Plugin_Visibility
         // Apply customisations at 999 (after all plugins have registered menus).
         add_action('admin_menu', [$this, 'apply_sidebar_changes'], 999);
         add_action('admin_menu', [$this, 'apply_custom_links'], 999);
-
-        // Order runs last so it covers both built-in and custom-link entries.
-        add_action('admin_menu', [$this, 'apply_menu_order'], 1000);
 
         // Inject a tiny inline script that sets target="_blank" on custom links.
         add_action('admin_footer', [$this, 'open_new_tab_links']);
@@ -177,8 +174,9 @@ class CDG_Core_Plugin_Visibility
                 $menu[$pos][0] = esc_html($names[$slug]);
             }
 
-            // Hide (per-role — Agency and native roles are never listed
-            // here, so they're never affected).
+            // Hide (per-role — Administrator, Manager, and Staff are all
+            // targetable; Agency is never listed here, so it's never
+            // affected).
             if (isset($hidden[$slug])) {
                 $roles = (array) $hidden[$slug];
                 if (array_intersect($user_roles, $roles)) {
@@ -272,73 +270,6 @@ class CDG_Core_Plugin_Visibility
                 'dashicons-' . preg_replace('/^dashicons-/', '', $icon),
             ];
         }
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Per-user menu ordering
-    // ─────────────────────────────────────────────────────────────────────────
-
-    public function apply_menu_order(): void
-    {
-        global $menu;
-        if (!is_array($menu)) {
-            return;
-        }
-
-        $user_roles = wp_get_current_user()->roles;
-        $orders     = (array) $this->plugin->get_setting('sidebar_menu_order');
-
-        // Use the first role (in the user's role list) that has a saved
-        // order. Most users only ever have one role.
-        $order = [];
-        foreach ($user_roles as $role) {
-            if (!empty($orders[$role])) {
-                $raw   = $orders[$role];
-                $order = is_array($raw)
-                    ? $raw
-                    : (array) json_decode((string) $raw, true);
-                break;
-            }
-        }
-
-        if (empty($order)) {
-            return;
-        }
-
-        // Index menu by slug.
-        $by_slug = [];
-        foreach ($menu as $pos => $item) {
-            $slug = $item[2] ?? '';
-            // CDG custom links store their URL in [2] for navigation but their
-            // cdg_link_{id} slug in [5] (hook suffix). Use that for ordering.
-            $hook = $item[5] ?? '';
-            if (strpos($hook, 'toplevel_page_cdg_link_') === 0) {
-                $slug = substr($hook, strlen('toplevel_page_'));
-            }
-            if ($slug !== '') {
-                $by_slug[$slug] = $item;
-            }
-        }
-
-        $new_menu = [];
-        $pos      = 2;
-
-        // Items in the saved order first.
-        foreach ($order as $slug) {
-            if (isset($by_slug[$slug])) {
-                $new_menu[$pos] = $by_slug[$slug];
-                unset($by_slug[$slug]);
-                $pos += 2;
-            }
-        }
-
-        // Remaining items (not yet in saved order) appended.
-        foreach ($by_slug as $item) {
-            $new_menu[$pos] = $item;
-            $pos += 2;
-        }
-
-        $menu = $new_menu;
     }
 
     // ─────────────────────────────────────────────────────────────────────────

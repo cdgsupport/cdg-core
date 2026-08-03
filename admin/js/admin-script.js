@@ -276,19 +276,6 @@
           if (hiddenInput) {
             hiddenInput.value = icon;
           }
-          // Sync icon to every drag list row for this link.
-          var idField = container.querySelector('[name$="[id]"]');
-          if (idField && idField.value) {
-            var slug = "cdg_link_" + idField.value;
-            document.querySelectorAll(".cdg-drag-item").forEach(function (li) {
-              if (li.dataset.slug === slug) {
-                var dragIcon = li.querySelector(".cdg-drag-icon");
-                if (dragIcon) {
-                  dragIcon.className = "dashicons dashicons-" + icon + " cdg-drag-icon";
-                }
-              }
-            });
-          }
         }
         closeIconPanel();
       });
@@ -373,58 +360,26 @@
         return hex;
       }
 
-      // isNew = true when this row was just created by the Add button
-      // (not loaded from the server), so we need to insert it into every drag list.
-      function initLinkRow(row, isNew) {
+      function initLinkRow(row) {
         // Bind icon picker.
         var pickerBtn = row.querySelector(".cdg-icon-picker-btn");
         if (pickerBtn) bindIconPickerBtn(pickerBtn);
 
-        // Sync title changes into every matching drag list row.
-        var titleField = row.querySelector(".cdg-custom-link-title");
-        if (titleField) {
-          titleField.addEventListener("input", function () {
-            var idField = row.querySelector('[name$="[id]"]');
-            if (!idField || !idField.value) return;
-            var slug = "cdg_link_" + idField.value;
-            document.querySelectorAll(".cdg-drag-item").forEach(function (li) {
-              if (li.dataset.slug === slug) {
-                var titleSpan = li.querySelector(".cdg-drag-title");
-                if (titleSpan) titleSpan.textContent = titleField.value;
-              }
-            });
-          });
-        }
-
-        // Bind remove button — also cleans up drag list rows.
+        // Bind remove button.
         var removeBtn = row.querySelector(".cdg-custom-link-remove");
         if (removeBtn) {
           removeBtn.addEventListener("click", function () {
             if (window.confirm("Remove this link?")) {
-              var idField = row.querySelector('[name$="[id]"]');
-              if (idField && idField.value) {
-                removeDragItem("cdg_link_" + idField.value);
-              }
               row.remove();
               syncLinksEmpty();
             }
           });
         }
-
-        // For brand-new rows, add a matching item to every drag list now.
-        if (isNew) {
-          var idField = row.querySelector('[name$="[id]"]');
-          var iconInput = row.querySelector(".cdg-icon-value");
-          var slug = "cdg_link_" + (idField ? idField.value : "");
-          var title = titleField ? titleField.value : "";
-          var icon  = iconInput  ? iconInput.value  : "admin-generic";
-          addDragItem(slug, title, icon);
-        }
       }
 
-      // Init existing rows (server-rendered, already in drag lists).
+      // Init existing rows (server-rendered).
       linksList.querySelectorAll(".cdg-custom-link-item").forEach(function (row) {
-        initLinkRow(row, false);
+        initLinkRow(row);
       });
 
       linkAddBtn.addEventListener("click", function (e) {
@@ -437,12 +392,12 @@
         tmp.innerHTML = html;
         var row = tmp.firstElementChild;
 
-        // Inject a fresh random id before init so drag list gets the right slug.
+        // Inject a fresh random id before init.
         var idField = row.querySelector('[name$="[id]"]');
         if (idField) idField.value = generateLinkId();
 
         linksList.appendChild(row);
-        initLinkRow(row, true);  // true = new row, insert into drag lists
+        initLinkRow(row);
         syncLinksEmpty();
 
         var firstInput = row.querySelector(".cdg-input");
@@ -451,133 +406,6 @@
 
       syncLinksEmpty();
     }
-
-    // ── Sidebar tab: per-role drag-and-drop ordering ──
-    var orderTabs = document.querySelectorAll(".cdg-order-tab");
-    var orderPanels = document.querySelectorAll(".cdg-order-user");
-
-    if (orderTabs.length) {
-      orderTabs.forEach(function (tab) {
-        tab.addEventListener("click", function () {
-          var role = tab.dataset.role;
-
-          orderTabs.forEach(function (t) { t.classList.remove("cdg-order-tab-active"); });
-          tab.classList.add("cdg-order-tab-active");
-
-          orderPanels.forEach(function (panel) {
-            panel.style.display = panel.dataset.role === role ? "" : "none";
-          });
-        });
-      });
-    }
-
-    function updateOrderInput(list) {
-      var slugs = [];
-      list.querySelectorAll(".cdg-drag-item").forEach(function (item) {
-        var slug = item.dataset.slug;
-        if (slug) slugs.push(slug);
-      });
-      var container = list.closest(".cdg-order-user");
-      if (container) {
-        var input = container.querySelector(".cdg-order-input");
-        if (input) input.value = JSON.stringify(slugs);
-      }
-    }
-
-    // Wire drag events onto a single <li> inside a given list.
-    // getD/setD share the "currently dragging" reference across all items in
-    // the same list without needing a closure over a shared var in a loop.
-    function initDragItem(item, list, getD, setD) {
-      item.setAttribute("draggable", "true");
-
-      item.addEventListener("dragstart", function (e) {
-        setD(item);
-        item.classList.add("cdg-dragging");
-        e.dataTransfer.effectAllowed = "move";
-        e.dataTransfer.setData("text/plain", item.dataset.slug || "");
-      });
-
-      item.addEventListener("dragend", function () {
-        item.classList.remove("cdg-dragging");
-        list.querySelectorAll(".cdg-drag-over").forEach(function (el) {
-          el.classList.remove("cdg-drag-over");
-        });
-        updateOrderInput(list);
-      });
-
-      item.addEventListener("dragover", function (e) {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = "move";
-        if (item !== getD()) {
-          item.classList.add("cdg-drag-over");
-        }
-      });
-
-      item.addEventListener("dragleave", function () {
-        item.classList.remove("cdg-drag-over");
-      });
-
-      item.addEventListener("drop", function (e) {
-        e.preventDefault();
-        item.classList.remove("cdg-drag-over");
-        var dragging = getD();
-        if (!dragging || dragging === item) return;
-        var rect = item.getBoundingClientRect();
-        if (e.clientY < rect.top + rect.height / 2) {
-          list.insertBefore(dragging, item);
-        } else {
-          list.insertBefore(dragging, item.nextSibling);
-        }
-        updateOrderInput(list);
-      });
-    }
-
-    function initDragList(list) {
-      var dragging = null;
-      function getD() { return dragging; }
-      function setD(item) { dragging = item; }
-
-      list.querySelectorAll(".cdg-drag-item").forEach(function (item) {
-        initDragItem(item, list, getD, setD);
-      });
-
-      // Expose so dynamically added items can be wired after init.
-      list._cdgInitDragItem = function (item) {
-        initDragItem(item, list, getD, setD);
-      };
-    }
-
-    // Add a drag item for a custom link to every drag list on the page.
-    function addDragItem(slug, title, icon) {
-      document.querySelectorAll(".cdg-drag-list").forEach(function (list) {
-        var li = document.createElement("li");
-        li.className = "cdg-drag-item";
-        li.dataset.slug = slug;
-        li.innerHTML =
-          '<span class="cdg-drag-handle" aria-hidden="true">&#8942;</span>' +
-          '<span class="dashicons dashicons-' + (icon || "admin-generic") +
-            ' cdg-drag-icon" aria-hidden="true"></span>' +
-          '<span class="cdg-drag-title">' + (title || "") + "</span>";
-        list.appendChild(li);
-        if (list._cdgInitDragItem) {
-          list._cdgInitDragItem(li);
-        }
-        updateOrderInput(list);
-      });
-    }
-
-    // Remove all drag items matching a slug from every drag list.
-    function removeDragItem(slug) {
-      document.querySelectorAll(".cdg-drag-item").forEach(function (li) {
-        if (li.dataset.slug === slug) {
-          var list = li.closest(".cdg-drag-list");
-          li.remove();
-          if (list) updateOrderInput(list);
-        }
-      });
-    }
-
-    document.querySelectorAll(".cdg-drag-list").forEach(initDragList);
 
   });
 })();

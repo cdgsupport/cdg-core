@@ -2,7 +2,7 @@
 
 WordPress optimizations, security hardening, and agency features for Crawford Design Group client sites.
 
-## Version 1.9.3
+## Version 1.9.4
 
 ### Requirements
 
@@ -216,6 +216,10 @@ Installed sites will see the update within ~12 hours (WordPress's normal update-
 Auto-updates are not enabled by default. If you want a given site to apply releases unattended, an admin can turn on "Enable auto-updates" for CDG Core from that site's Plugins page — this uses WordPress's own fatal-error-protected update path.
 
 ### Changelog
+
+#### 1.9.4
+
+- Removed the "Howdy," greeting from the admin bar account menu (`CDG_Core_Cleanup::remove_howdy()`), leaving just the username. Small test change to exercise the new GitHub-release update flow end to end.
 
 #### 1.9.3
 

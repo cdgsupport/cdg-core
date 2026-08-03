@@ -85,6 +85,27 @@ class CDG_Core_Cleanup
         // Heartbeat control
         add_action('init', [$this, 'control_heartbeat_frontend']);
         add_action('admin_init', [$this, 'control_heartbeat_admin']);
+
+        // Remove "Howdy," from the admin bar account menu. Runs after
+        // wp_admin_bar_my_account_item() (priority 0) adds the node.
+        add_filter('admin_bar_menu', [$this, 'remove_howdy'], 999);
+    }
+
+    /**
+     * Strip the "Howdy," greeting from the admin bar's account menu item,
+     * leaving just the username.
+     *
+     * @param WP_Admin_Bar $wp_admin_bar
+     * @return void
+     */
+    public function remove_howdy(WP_Admin_Bar $wp_admin_bar): void
+    {
+        $account = $wp_admin_bar->get_node('my-account');
+
+        if ($account && isset($account->title)) {
+            $account->title = preg_replace('/^Howdy,\s*/i', '', $account->title);
+            $wp_admin_bar->add_node($account);
+        }
     }
 
     /**

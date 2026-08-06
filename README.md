@@ -2,7 +2,7 @@
 
 WordPress optimizations, security hardening, and agency features for Crawford Design Group client sites.
 
-## Version 1.9.5
+## Version 1.9.6
 
 ### Requirements
 
@@ -216,6 +216,11 @@ Installed sites will see the update within ~12 hours (WordPress's normal update-
 Auto-updates are not enabled by default. If you want a given site to apply releases unattended, an admin can turn on "Enable auto-updates" for CDG Core from that site's Plugins page — this uses WordPress's own fatal-error-protected update path.
 
 ### Changelog
+
+#### 1.9.6
+
+- Removed the custom "Agency" role (`cdg_agency`, a clone of Administrator). It caused a real-world bug: a third-party plugin (Gravity Forms) gated its own admin menu on the literal `administrator` role rather than a capability, so an Agency account — despite holding every one of Administrator's capabilities — never saw that menu item. The Agency Email setting now switches the matching account to WordPress's native Administrator role directly instead of a lookalike clone, which has no such gap. That account continues to bypass every Sidebar tab hide rule (Sidebar Menu Items, Custom Menu Links, Plugin Visibility) unconditionally, now matched by email instead of role (`CDG_Core_Roles::is_agency_user()`). Sites with users still on the old `cdg_agency` role are migrated to Administrator automatically on upgrade, and the retired role is removed. Manager and Staff are unaffected.
+- The Roles tab's "Rebuild Roles" button (introduced in 1.9.5) now only re-clones Manager and Staff, since Agency is no longer a cloned role.
 
 #### 1.9.5
 

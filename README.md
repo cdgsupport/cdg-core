@@ -2,7 +2,7 @@
 
 WordPress optimizations, security hardening, and agency features for Crawford Design Group client sites.
 
-## Version 1.9.4
+## Version 1.9.5
 
 ### Requirements
 
@@ -216,6 +216,10 @@ Installed sites will see the update within ~12 hours (WordPress's normal update-
 Auto-updates are not enabled by default. If you want a given site to apply releases unattended, an admin can turn on "Enable auto-updates" for CDG Core from that site's Plugins page — this uses WordPress's own fatal-error-protected update path.
 
 ### Changelog
+
+#### 1.9.5
+
+- Added a "Rebuild Roles" button to the Roles tab (Custom Roles card). Agency/Manager/Staff are normally only (re)created when missing, so a role created before another plugin (e.g. Gravity Forms) added its own capabilities to Administrator won't pick those up on its own — this forces a re-clone from the site's current live Administrator/Editor capabilities.
 
 #### 1.9.4
 

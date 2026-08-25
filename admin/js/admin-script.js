@@ -137,7 +137,7 @@
         if (typeSelect && locationRow) {
           function syncLocation() {
             var t = typeSelect.value;
-            locationRow.style.display = (t === "js" || t === "html") ? "" : "none";
+            locationRow.style.display = (t === "css" || t === "js" || t === "html") ? "" : "none";
           }
           typeSelect.addEventListener("change", syncLocation);
           syncLocation();

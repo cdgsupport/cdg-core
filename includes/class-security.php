@@ -55,9 +55,13 @@ class CDG_Core_Security
             add_filter('wp_headers', [$this, 'remove_powered_by_header']);
         }
         
-        // Disable code editor for non-admins
+        // Disable code editor for non-admins, and block the Theme/Plugin
+        // file editor screens outright (a common RCE persistence vector
+        // after an account compromise — unlike wp_editor_settings below,
+        // this applies to every role, administrators included).
         if ($this->plugin->get_setting('disable_code_editor')) {
             add_filter('wp_editor_settings', [$this, 'disable_code_editor'], 10, 2);
+            add_filter('map_meta_cap', [$this, 'block_file_editor'], 10, 2);
         }
     }
 
@@ -143,11 +147,30 @@ class CDG_Core_Security
         if (!is_array($settings)) {
             $settings = [];
         }
-        
+
         if (!current_user_can('manage_options')) {
             $settings['codeEditingEnabled'] = false;
         }
-        
+
         return $settings;
+    }
+
+    /**
+     * Block the Appearance > Theme Editor and Plugins > Plugin Editor
+     * screens for every role, including administrators. Only admins hold
+     * these capabilities by default, so exempting them (as the classic
+     * editor toggle above does) would make this a no-op on a stock install.
+     *
+     * @param array $caps Required primitive capabilities
+     * @param string $cap Meta capability being mapped
+     * @return array
+     */
+    public function block_file_editor($caps, $cap): array
+    {
+        if (in_array($cap, ['edit_themes', 'edit_plugins', 'edit_files'], true)) {
+            return ['do_not_allow'];
+        }
+
+        return $caps;
     }
 }

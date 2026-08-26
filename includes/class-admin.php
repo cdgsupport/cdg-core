@@ -167,6 +167,21 @@ class CDG_Core_Admin
         $s["disable_comments"] = !empty($input["disable_comments"]);
         $s["hide_divi_projects"] = !empty($input["hide_divi_projects"]);
 
+        $s["enable_post_rename"] = !empty($input["enable_post_rename"]);
+        $s["post_rename_singular"] = sanitize_text_field(
+          $input["post_rename_singular"] ?? "Post"
+        );
+        $s["post_rename_plural"] = sanitize_text_field(
+          $input["post_rename_plural"] ?? "Posts"
+        );
+        $s["post_rename_icon"] = sanitize_html_class(
+          preg_replace(
+            "/^dashicons-/",
+            "",
+            (string) ($input["post_rename_icon"] ?? "admin-post")
+          )
+        );
+
         $s["remove_wp_version"] = !empty($input["remove_wp_version"]);
         $s["remove_shortlink"] = !empty($input["remove_shortlink"]);
         $s["remove_adjacent_posts"] = !empty($input["remove_adjacent_posts"]);
@@ -214,6 +229,9 @@ class CDG_Core_Admin
         );
         $s["post_revisions_limit"] = absint(
           $input["post_revisions_limit"] ?? 5
+        );
+        $s["cleanup_expired_transients"] = !empty(
+          $input["cleanup_expired_transients"]
         );
         $s["remove_dns_prefetch"] = !empty($input["remove_dns_prefetch"]);
         $s["heartbeat_admin"] = sanitize_text_field(
@@ -953,6 +971,68 @@ class CDG_Core_Admin
       }
     );
 
+    $this->card(
+      'Rename &#8220;Posts&#8221;',
+      "Rebrand the built-in Post type across wp-admin &#8212; labels, sidebar menu, and icon. Doesn&#8217;t touch the URL, slug, or permalinks.",
+      function () use ($s) {
+        $this->row(
+          "Enable Post Rename",
+          "Applies the labels and icon below everywhere WordPress shows &#8220;Post&#8221; / &#8220;Posts&#8221; in wp-admin.",
+          $this->sw("enable_post_rename", $s["enable_post_rename"])
+        );
+
+        $sub_class = !$s["enable_post_rename"] ? "cdg-disabled" : "";
+        echo '<div id="cdg-post-rename-sub-settings" class="' .
+          esc_attr($sub_class) .
+          '">';
+
+        $this->row(
+          "Singular Label",
+          'e.g. &#8220;Article&#8221; &#8212; used for &#8220;Add New Article,&#8221; &#8220;Edit Article,&#8221; and similar.',
+          '<input type="text" name="post_rename_singular" value="' .
+            esc_attr($s["post_rename_singular"]) .
+            '" placeholder="Post" class="cdg-input">',
+          true
+        );
+
+        $this->row(
+          "Plural Label",
+          'e.g. &#8220;Articles&#8221; &#8212; used for the sidebar menu, &#8220;All Articles,&#8221; and similar.',
+          '<input type="text" name="post_rename_plural" value="' .
+            esc_attr($s["post_rename_plural"]) .
+            '" placeholder="Posts" class="cdg-input">',
+          true
+        );
+
+        $icon = preg_replace(
+          "/^dashicons-/",
+          "",
+          (string) ($s["post_rename_icon"] ?: "admin-post")
+        );
+        $icon_picker =
+          '<div class="cdg-icon-field">' .
+          '<button type="button" class="cdg-icon-picker-btn" title="' .
+          esc_attr__("Choose icon", "cdg-core") .
+          '"><span class="dashicons dashicons-' .
+          esc_attr($icon) .
+          '" data-icon="' .
+          esc_attr($icon) .
+          '"></span></button>' .
+          '<input type="hidden" name="post_rename_icon" class="cdg-icon-value" value="' .
+          esc_attr($icon) .
+          '"></div>';
+
+        $this->row(
+          "Menu Icon",
+          "Replaces the default icon in the sidebar.",
+          $icon_picker,
+          true
+        );
+
+        echo "</div>";
+      }
+    );
+
     // Head cleanup
     $this->card(
       "WordPress Head Cleanup",
@@ -1077,7 +1157,7 @@ class CDG_Core_Admin
           ],
           "disable_code_editor" => [
             "Disable Code Editor",
-            "Disables the theme/plugin file editor for non-administrator users.",
+            "Blocks the Theme Editor and Plugin Editor screens entirely (all roles), and hides the raw code view in the classic editor for non-administrators.",
           ],
         ];
 
@@ -1205,6 +1285,21 @@ class CDG_Core_Admin
               "disabled" => ["Disabled", "Never save post revisions"],
             ],
             $mode
+          )
+        );
+      }
+    );
+
+    $this->card(
+      "Database Cleanup",
+      "Reduce database bloat without touching anything still in use.",
+      function () use ($s) {
+        $this->row(
+          "Clean Up Expired Transients",
+          "Daily cron removes transients whose expiration has already passed. Only ever touches rows WordPress itself already considers dead &#8212; safe alongside Divi&#8217;s own caching.",
+          $this->sw(
+            "cleanup_expired_transients",
+            $s["cleanup_expired_transients"]
           )
         );
       }
@@ -1686,7 +1781,9 @@ class CDG_Core_Admin
     // Existing (saved) links start collapsed to a summary line; a freshly
     // added, still-empty link starts open since it needs input right away.
     $has_data   = ($link["title"] ?? "") !== "" || ($link["link"] ?? "") !== "";
-    $item_class = "cdg-custom-link-item" . ($has_data ? " cdg-cli-collapsed" : "");
+    $item_class =
+      "cdg-custom-link-item cdg-icon-field" .
+      ($has_data ? " cdg-cli-collapsed" : "");
     $toggle_label = $has_data ? __("Expand", "cdg-core") : __("Collapse", "cdg-core");
 
     $url_raw     = (string) ($link["link"] ?? "");

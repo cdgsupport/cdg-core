@@ -2,7 +2,7 @@
 
 WordPress optimizations, security hardening, and agency features for Crawford Design Group client sites.
 
-## Version 1.9.7
+## Version 1.9.9
 
 ### Requirements
 
@@ -30,6 +30,8 @@ WordPress optimizations, security hardening, and agency features for Crawford De
 - CPT Dashboard widgets
 - **Disable Comments** (full system disable)
 - **Hide Divi Projects**
+- **Rename "Posts"** - rebrand the built-in Post type's labels, sidebar menu, and icon
+- **Expired transient cleanup** - daily cron removes stale transients to reduce database bloat
 - **Plugin Visibility** - hide specific plugins from the Plugins page per role (native WordPress roles included, not just Manager/Staff); Agency always sees every plugin
 - **Custom Roles** - opt-in Agency / Manager / Staff roles
 - **Sidebar Menu Management** - rename/hide sidebar items and submenus per role
@@ -71,10 +73,10 @@ plugins/
 | Tab               | Description                                              |
 | ----------------- | -------------------------------------------------------- |
 | **Features**      | Documentation system, CPT widgets                        |
-| **Defaults**      | Comments, Divi Projects                                  |
+| **Defaults**      | Comments, Divi Projects, Post renaming                   |
 | **WP Cleanup**    | Head cleanup, dashboard widgets, heartbeat               |
 | **Security**      | XML-RPC, uploads, X-Powered-By, SVG/Font/Lottie support  |
-| **Performance**   | Gutenberg, queries, images, revisions                    |
+| **Performance**   | Gutenberg, queries, images, revisions, transient cleanup |
 | **Gravity Forms** | Divi/GF compatibility fixes and auto-page generation     |
 | **Admin**         | Branding, theme color, custom CSS                        |
 | **Roles**         | Custom Agency / Manager / Staff roles; Agency auto-assigned by email |
@@ -94,7 +96,7 @@ CDG Core complements SpinupWP by handling:
 - **X-Powered-By removal** (not handled by SpinupWP defaults)
 - **XML-RPC disabling**
 - **Dangerous file upload blocking**
-- **Code editor restrictions**
+- **Code editor restrictions** (classic editor code view, plus the Theme/Plugin File Editor screens for every role)
 
 ### Defaults Tab
 
@@ -118,6 +120,16 @@ Fully disables Divi's built-in Projects post type:
 - Removes Project Categories taxonomy
 - Removes Project Tags taxonomy
 - Redirects any direct access to project admin pages
+
+#### Rename "Posts"
+
+Rebrands the built-in Post type across wp-admin — labels, sidebar menu entry, and menu icon. Purely cosmetic: the post type's slug, rewrite rules, and permalinks are untouched.
+
+- **Singular / Plural labels** — drive "Add New," "Edit," "All …," search/trash messages, and the admin bar's "+ New" dropdown
+- **Menu icon** — replaces the default icon in the sidebar, picked from the same dashicon picker used by Custom Menu Links
+- Disabled by default
+
+Note: a handful of deeply hardcoded WordPress core strings (the Dashboard "At a Glance" widget's post counts, "Recently Published") read literal `_n( 'Post', 'Posts', ... )` calls rather than the post type's label object, and may still say "Post(s)" even with this enabled.
 
 ### Security Tab
 
@@ -178,6 +190,10 @@ Control how many revisions WordPress keeps:
 
 Note: The CDG Core setting overrides any `WP_POST_REVISIONS` constant in `wp-config.php`.
 
+### Database Cleanup
+
+Daily cron removes transients whose expiration has already passed, using WordPress's own `delete_expired_transients()`. Only ever touches rows WordPress itself already considers dead, so it's safe alongside Divi's own caching. Enabled by default.
+
 ### Admin Branding
 
 - Custom admin footer text with CDG branding
@@ -216,6 +232,12 @@ Installed sites will see the update within ~12 hours (WordPress's normal update-
 Auto-updates are not enabled by default. If you want a given site to apply releases unattended, an admin can turn on "Enable auto-updates" for CDG Core from that site's Plugins page — this uses WordPress's own fatal-error-protected update path.
 
 ### Changelog
+
+#### 1.9.9
+
+- Added a "Rename 'Posts'" feature (Defaults tab, off by default): rebrands the built-in Post type's labels, sidebar menu entry, and icon across wp-admin without touching its slug, rewrite rules, or permalinks. Uses `register_post_type_args` for the label set (all ~28 keys, since WordPress core ships every one explicitly for `post` — none are left for auto-fill to catch) and a direct `admin_menu` rewrite for the sidebar entry itself, which WordPress builds from hardcoded strings rather than the post type's labels. Note: this same feature previously shipped in 1.2.0 and was explicitly removed in 1.3.0; no reason for that removal is recorded in the changelog or commit history.
+- Added scheduled cleanup of expired transients (Performance tab, on by default): a daily cron calling WordPress's own `delete_expired_transients()` to reduce database bloat, scoped so it only ever touches rows already past their own expiration.
+- "Disable Code Editor" (Security tab) now also blocks the Theme Editor and Plugin Editor screens entirely, for every role — previously it only hid the classic editor's raw-HTML code view, despite its description already claiming to cover the file editor screens.
 
 #### 1.9.7
 

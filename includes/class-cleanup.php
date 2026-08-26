@@ -13,6 +13,11 @@ declare(strict_types=1);
 class CDG_Core_Cleanup
 {
     /**
+     * Cron hook for the expired-transient cleanup.
+     */
+    private const TRANSIENT_CLEANUP_HOOK = 'cdg_core_cleanup_expired_transients';
+
+    /**
      * WordPress core dashboard widget IDs managed by CDG Core's dedicated
      * "WordPress Core" checkboxes. Stored as a constant so both the capture
      * method (which skips them at write-time) and the admin UI (which filters
@@ -89,6 +94,15 @@ class CDG_Core_Cleanup
         // Remove "Howdy," from the admin bar account menu. Runs after
         // wp_admin_bar_my_account_item() (priority 0) adds the node.
         add_filter('admin_bar_menu', [$this, 'remove_howdy'], 999);
+
+        // Expired transient cleanup — self-corrects the cron schedule each
+        // load so toggling the setting off also tears the event back down.
+        if ($this->plugin->get_setting('cleanup_expired_transients')) {
+            add_action('init', [$this, 'schedule_transient_cleanup']);
+            add_action(self::TRANSIENT_CLEANUP_HOOK, [$this, 'run_transient_cleanup']);
+        } else {
+            add_action('init', [$this, 'unschedule_transient_cleanup']);
+        }
     }
 
     /**
@@ -395,6 +409,46 @@ class CDG_Core_Cleanup
                 return $settings;
             });
         }
+    }
+
+    /**
+     * Schedule the daily expired-transient cleanup if not already scheduled.
+     *
+     * @return void
+     */
+    public function schedule_transient_cleanup(): void
+    {
+        if (!wp_next_scheduled(self::TRANSIENT_CLEANUP_HOOK)) {
+            wp_schedule_event(time(), 'daily', self::TRANSIENT_CLEANUP_HOOK);
+        }
+    }
+
+    /**
+     * Tear down the scheduled cleanup event (setting disabled).
+     *
+     * @return void
+     */
+    public function unschedule_transient_cleanup(): void
+    {
+        $timestamp = wp_next_scheduled(self::TRANSIENT_CLEANUP_HOOK);
+
+        if ($timestamp) {
+            wp_unschedule_event($timestamp, self::TRANSIENT_CLEANUP_HOOK);
+        }
+    }
+
+    /**
+     * Delete transients whose expiration has already passed. Uses core's
+     * own delete_expired_transients(), which only ever touches rows whose
+     * paired _transient_timeout_* has elapsed — safe by definition, since
+     * WordPress itself already treats those as dead on next read (this
+     * never touches Divi's own live cache data).
+     *
+     * @return void
+     */
+    public function run_transient_cleanup(): void
+    {
+        delete_expired_transients();
     }
 
     /**

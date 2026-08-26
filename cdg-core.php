@@ -3,7 +3,7 @@
  * Plugin Name: CDG Core
  * Plugin URI: https://crawforddesigngroup.com
  * Description: WordPress optimizations, security hardening, and agency features for Crawford Design Group client sites.
- * Version: 1.9.8
+ * Version: 1.9.9
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author: Crawford Design Group
@@ -36,7 +36,7 @@ if (!class_exists("CDG_Core")) {
 /**
  * Plugin Constants
  */
-define("CDG_CORE_VERSION", "1.9.8");
+define("CDG_CORE_VERSION", "1.9.9");
 define("CDG_CORE_DIR", plugin_dir_path(__FILE__));
 define("CDG_CORE_URL", plugin_dir_url(__FILE__));
 define("CDG_CORE_BASENAME", plugin_basename(__FILE__));
@@ -150,6 +150,12 @@ input[type=text], input[type=email], input[type=url], input[type=password], inpu
     // Defaults - Divi Projects
     "hide_divi_projects" => false,
 
+    // Rename "Posts"
+    "enable_post_rename" => false,
+    "post_rename_singular" => "Post",
+    "post_rename_plural" => "Posts",
+    "post_rename_icon" => "admin-post",
+
     // WordPress Cleanup
     "remove_wp_version" => true,
     "remove_shortlink" => true,
@@ -202,6 +208,9 @@ input[type=text], input[type=email], input[type=url], input[type=password], inpu
     // Post Revisions
     "post_revisions_mode" => "limited",
     "post_revisions_limit" => 5,
+
+    // Database Cleanup
+    "cleanup_expired_transients" => true,
 
     // Code Snippets
     "code_snippets" => [],
@@ -425,6 +434,9 @@ input[type=text], input[type=email], input[type=url], input[type=password], inpu
 
     // Defaults (Comments, Projects)
     new CDG_Core_Defaults($this);
+
+    // Rename "Posts" — labels, sidebar menu, and icon. No-op unless enabled.
+    new CDG_Core_Post_Rename($this);
 
     // Roles — Manager / Staff, plus Agency Email auto-assignment to native
     // Administrator. Instantiated unconditionally, but the role-creation
@@ -763,6 +775,11 @@ register_activation_hook(__FILE__, function (): void {
  */
 register_deactivation_hook(__FILE__, function (): void {
   flush_rewrite_rules();
+
+  $timestamp = wp_next_scheduled("cdg_core_cleanup_expired_transients");
+  if ($timestamp) {
+    wp_unschedule_event($timestamp, "cdg_core_cleanup_expired_transients");
+  }
 });
 
 /**

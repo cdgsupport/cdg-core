@@ -406,7 +406,7 @@
         if (!btn || !activePickerBtn) return;
 
         var icon      = btn.dataset.icon;
-        var container = activePickerBtn.closest(".cdg-custom-link-item");
+        var container = activePickerBtn.closest(".cdg-icon-field");
         if (container) {
           var iconSpan = activePickerBtn.querySelector(".dashicons");
           var hiddenInput = container.querySelector(".cdg-icon-value");

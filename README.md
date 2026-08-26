@@ -223,9 +223,10 @@ As of 1.9.3, CDG Core ships with [Plugin Update Checker](https://github.com/Yahn
 **Cutting a release:**
 
 1. Bump the `Version:` header in `cdg-core.php` (and `CDG_CORE_VERSION`) to the new version number.
-2. Build the plugin zip the way you normally do (`cdg-core.zip` — same file the deploy script and manual uploads use).
-3. On GitHub, draft a new Release. Tag it (e.g. `v1.9.3`), give it a title/changelog, and **attach `cdg-core.zip` as a release asset**.
-4. Publish the release.
+2. On GitHub, draft a new Release from `main` and tag it (e.g. `v1.9.9`).
+3. Publish it with a title and changelog. No zip needs to be built or attached.
+
+No manual zip step is required: when a release has no matching zip asset, the vendored Plugin Update Checker (`Puc\v5p7\Vcs\GitHubApi`, see `downloadUrl` fallback in `includes/plugin-update-checker/Puc/v5p7/Vcs/GitHubApi.php`) falls back to GitHub's own auto-generated source zip for the tag (`zipball_url`) — a valid single-folder archive that WordPress's plugin upgrader installs correctly given the repo root already matches the plugin's file layout (see the 1.9.0 restructure below). Attaching a named zip asset (e.g. `cdgcore.zip`) still works if one is ever needed — a matching asset takes priority over the zipball fallback — it's just no longer a required step.
 
 Installed sites will see the update within ~12 hours (WordPress's normal update-check cadence), or immediately if an admin clicks "Check again" on the Updates screen. From there it's a normal one-click "Update Now" — no deactivate/reactivate workaround needed.
 

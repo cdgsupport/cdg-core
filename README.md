@@ -2,7 +2,7 @@
 
 WordPress optimizations, security hardening, and agency features for Crawford Design Group client sites.
 
-## Version 1.9.9
+## Version 1.9.10
 
 ### Requirements
 
@@ -233,6 +233,10 @@ Installed sites will see the update within ~12 hours (WordPress's normal update-
 Auto-updates are not enabled by default. If you want a given site to apply releases unattended, an admin can turn on "Enable auto-updates" for CDG Core from that site's Plugins page — this uses WordPress's own fatal-error-protected update path.
 
 ### Changelog
+
+#### 1.9.10
+
+- Documentation CPT now lives under **Tools → Documentation** instead of its own top-level sidebar menu (`register_post_type()`'s `show_in_menu` set to `'tools.php'`). Its own sub-tabs (viewer pages, categories) are unaffected — they're registered against the post type's own `edit.php?post_type=cdg_documentation` slug regardless of where that slug sits in the menu tree. `menu_position`/`menu_icon`, which only apply to top-level items, were dropped from the registration since they no longer do anything. Sites that used the Sidebar tab to rename/hide Documentation as a top-level entry will need to reconfigure that under Tools's submenu section.
 
 #### 1.9.9
 
